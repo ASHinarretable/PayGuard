@@ -31,3 +31,11 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "ruff>=0.16.10",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = ["live: needs real provider credentials; skipped in CI"]
+
+[tool.ruff]
+line-length = 110
