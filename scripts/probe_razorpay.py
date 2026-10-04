@@ -53,8 +53,8 @@ async def probe(image: str) -> None:
         tools = (await session.list_tools()).tools
         dump = {
             "image": image,
-            "server": init.server_info.model_dump(),
-            "tools": [t.model_dump(mode="json", exclude_none=True) for t in tools],
+            "server": init.server_info.model_dump(by_alias=True, exclude_none=True),
+            "tools": [t.model_dump(mode="json", by_alias=True, exclude_none=True) for t in tools],
         }
         (FIXTURES / "tools.json").write_text(json.dumps(dump, indent=2), encoding="utf-8")
         print(f"{init.server_info.name} {init.server_info.version}: {len(tools)} tools")
@@ -76,7 +76,9 @@ async def probe(image: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image", default="razorpay/mcp")
+    # The Docker Hub image lags the source; build the current one with
+    #   docker build -t razorpay-mcp:main https://github.com/razorpay/razorpay-mcp-server.git
+    parser.add_argument("--image", default="razorpay-mcp:main")
     asyncio.run(probe(parser.parse_args().image))
 
 

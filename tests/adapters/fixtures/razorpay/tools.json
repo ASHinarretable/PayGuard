@@ -2,17 +2,13 @@
   "image": "razorpay-mcp:main",
   "server": {
     "name": "razorpay-mcp-server",
-    "title": null,
-    "version": "1.0.0",
-    "description": null,
-    "website_url": null,
-    "icons": null
+    "version": "1.0.0"
   },
   "tools": [
     {
       "name": "capture_payment",
       "description": "Use this tool to capture a previously authorized payment. Only payments with 'authorized' status can be captured",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "amount": {
@@ -35,16 +31,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "close_qr_code",
       "description": "Close a QR Code that's no longer needed",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "qr_code_id": {
@@ -57,16 +53,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "create_instant_settlement",
       "description": "Create an instant settlement to get funds transferred to your bank account",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "amount": {
@@ -97,16 +93,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "create_order",
       "description": "Create a new order in Razorpay. Supports both regular orders and mandate orders. \n\nFor REGULAR ORDERS: Provide amount, currency, and optional receipt/notes. \n\nFor MANDATE ORDERS (recurring payments): You MUST provide ALL of these fields: amount, currency, method='upi', customer_id (starts with 'cust_'), and token object. \n\nThe token object is required for mandate orders and must contain: max_amount (positive number in paise - For INR: 100 paise = \u20b91), frequency (as_presented/monthly/one_time/yearly/weekly/daily), type='single_block_multiple_debit', and optionally expire_at (defaults to today+60days). \n\nIMPORTANT: When token.type is 'single_block_multiple_debit', the method MUST be 'upi'. \n\nExample mandate order payload: {\"amount\": 100, \"currency\": \"INR\", \"method\": \"upi\", \"customer_id\": \"cust_abc123\", \"token\": {\"max_amount\": 100, \"frequency\": \"as_presented\", \"type\": \"single_block_multiple_debit\"}, \"receipt\": \"Receipt No. 1\", \"notes\": {\"key\": \"value\"}}",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "amount": {
@@ -188,16 +184,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "create_payment_link",
       "description": "Create a new standard payment link in Razorpay with a specified amount",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "accept_partial": {
@@ -273,16 +269,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "create_qr_code",
       "description": "Create a new QR code in Razorpay that can be used to accept UPI payments",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "close_by": {
@@ -337,16 +333,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "create_refund",
       "description": "Use this tool to create a normal refund for a payment. Amount should be in paise (smallest currency unit). For INR: 100 paise = \u20b91. Example: for \u20b9295, use 29500",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "amount": {
@@ -378,16 +374,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "create_registration_link",
       "description": "Create a registration link (auth link) for subscription registration in Razorpay to set up recurring payments via card, emandate, NACH, or UPI.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "amount": {
@@ -454,16 +450,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "detect_stack",
       "description": "Detect the technology stack of a project based on file information. Returns language, framework, frontend framework, and package manager. IMPORTANT: Always call this tool FIRST before calling integrate_razorpay_checkout. Before calling this tool, you MUST: 1) List the project's files and pass them in the 'files' parameter, 2) Read the relevant dependency file (package.json for Node.js, requirements.txt for Python, go.mod for Go, pubspec.yaml for Flutter, Cargo.toml for Rust, pom.xml for Java, etc.) and pass its contents in the corresponding parameter. Then pass the detected language, framework, and frontend to integrate_razorpay_checkout.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "cargoToml": {
@@ -516,16 +512,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_all_instant_settlements",
       "description": "Fetch all instant settlements with optional filtering, pagination, and payout details",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "count": {
@@ -562,16 +558,16 @@
         }
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_all_orders",
       "description": "Fetch all orders with optional filtering and pagination",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "authorized": {
@@ -621,16 +617,16 @@
         }
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_all_payment_links",
       "description": "Fetch all payment links with optional filtering by payment ID or reference ID.You can specify the upi_link parameter to filter by link type.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "payment_id": {
@@ -648,16 +644,16 @@
         }
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_all_payments",
       "description": "Fetch all payments with optional filtering and pagination",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "count": {
@@ -684,16 +680,16 @@
         }
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_all_payouts",
       "description": "Fetch all payouts for a bank account number",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "account_number": {
@@ -716,16 +712,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_all_qr_codes",
       "description": "Fetch all QR codes with optional filtering and pagination",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "count": {
@@ -752,16 +748,16 @@
         }
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_all_refunds",
       "description": "Use this tool to retrieve details of all refunds. By default, only the last 10 refunds are returned.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "count": {
@@ -783,16 +779,16 @@
         }
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_all_settlements",
       "description": "Fetch all settlements with optional filtering and pagination",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "count": {
@@ -819,16 +815,16 @@
         }
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_instant_settlement_with_id",
       "description": "Fetch details of a specific instant settlement using its ID",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "settlement_id": {
@@ -841,16 +837,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_multiple_refunds_for_payment",
       "description": "Use this tool to retrieve multiple refunds for a payment. By default, only the last 10 refunds are returned.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "count": {
@@ -879,16 +875,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_order",
       "description": "Fetch an order's details using its ID",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "order_id": {
@@ -901,16 +897,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_order_payments",
       "description": "Fetch all payments made for a specific order in Razorpay",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "order_id": {
@@ -923,16 +919,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_payment",
       "description": "Use this tool to retrieve the details of a specific payment using its id. Amount returned is in paisa",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "payment_id": {
@@ -945,16 +941,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_payment_card_details",
       "description": "Use this tool to retrieve the details of the card used to make a payment. Only works for payments made using a card.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "payment_id": {
@@ -967,16 +963,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_payment_link",
       "description": "Fetch payment link details using it's ID. Response contains the basic details like amount, status etc. The link could be of any type(standard or UPI)",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "payment_link_id": {
@@ -989,16 +985,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_payments_for_qr_code",
       "description": "Fetch all payments made on a QR code",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "count": {
@@ -1032,16 +1028,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_payout_with_id",
       "description": "Fetch a payout's details using its ID",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "payout_id": {
@@ -1054,16 +1050,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_qr_code",
       "description": "Fetch a QR code's details using it's ID",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "qr_code_id": {
@@ -1076,16 +1072,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_qr_codes_by_customer_id",
       "description": "Fetch all QR codes for a specific customer",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "customer_id": {
@@ -1098,16 +1094,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_qr_codes_by_payment_id",
       "description": "Fetch all QR codes for a specific payment",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "payment_id": {
@@ -1120,16 +1116,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_refund",
       "description": "Use this tool to retrieve the details of a specific refund using its id.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "refund_id": {
@@ -1142,16 +1138,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_settlement_recon_details",
       "description": "Fetch settlement reconciliation report for a specific time period",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "count": {
@@ -1181,16 +1177,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_settlement_with_id",
       "description": "Fetch details of a specific settlement using its ID",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "settlement_id": {
@@ -1203,16 +1199,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_specific_refund_for_payment",
       "description": "Use this tool to retrieve details of a specific refund made for a payment.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "payment_id": {
@@ -1230,16 +1226,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "fetch_tokens",
       "description": "Get all saved payment methods (cards, UPI) for a customer. Accepts either a customer_id (preferred) or a contact number. When customer_id is provided it is used directly to fetch tokens; otherwise the contact number is used to find or create the customer first. Returns saved payment tokens including credit/debit cards, UPI IDs, digital wallets, and other tokenized payment instruments.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "contact": {
@@ -1253,16 +1249,16 @@
         }
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "initiate_payment",
       "description": "Initiate a payment using the S2S JSON v1 flow. Required parameters: amount and order_id. For saved payment methods, provide token. For UPI collect flow, provide 'vpa' parameter which automatically sets UPI with flow='collect' and expiry_time='6'. For UPI intent flow, set 'upi_intent=true' parameter which automatically sets UPI with flow='intent' and API returns UPI URL. Supports additional parameters like customer_id, email, contact, save, and recurring. Returns payment details including next action steps if required.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "amount": {
@@ -1321,16 +1317,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "integrate_razorpay_checkout",
       "description": "Complete Razorpay Standard Checkout integration. Returns ALL code needed - backend routes, frontend integration, and payment verification. IMPORTANT: Before calling this tool, ALWAYS call detect_stack first to determine the project's language, backendFramework, and frontendFramework. Do NOT ask the user for these values. The AI should apply ALL returned files and modifications without asking the user for additional steps.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "backendFramework": {
@@ -1402,16 +1398,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": true,
-        "destructive_hint": false,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "payment_link_notify",
       "description": "Send or resend notification for a payment link via SMS or email.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "medium": {
@@ -1433,16 +1429,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "payment_link_upi_create",
       "description": "Create a new UPI payment link in Razorpay with a specified amount and additional options.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "accept_partial": {
@@ -1518,16 +1514,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "resend_otp",
       "description": "Resend OTP to the customer's registered mobile number if the previous OTP was not received or has expired.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "payment_id": {
@@ -1540,16 +1536,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "revoke_token",
       "description": "Revoke a saved payment method (token) for a customer. This tool revokes the specified token associated with the given customer ID. Once revoked, the token cannot be used for future payments.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "customer_id": {
@@ -1567,16 +1563,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "submit_otp",
       "description": "Verify and submit the OTP received by the customer to complete the payment authentication process.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "otp_string": {
@@ -1594,16 +1590,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "update_order",
       "description": "Use this tool to update the notes for a specific order. Only the notes field can be modified.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "notes": {
@@ -1622,16 +1618,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "update_payment",
       "description": "Use this tool to update the notes field of a payment. Notes are key-value pairs that can be used to store additional information.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "notes": {
@@ -1650,16 +1646,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "update_payment_link",
       "description": "Update any existing standard or UPI payment link with new details such as reference ID, expiry date, or notes.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "accept_partial": {
@@ -1693,16 +1689,16 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     },
     {
       "name": "update_refund",
       "description": "Use this tool to update the notes for a specific refund. Only the notes field can be modified.",
-      "input_schema": {
+      "inputSchema": {
         "type": "object",
         "properties": {
           "notes": {
@@ -1721,10 +1717,10 @@
         ]
       },
       "annotations": {
-        "read_only_hint": false,
-        "destructive_hint": true,
-        "idempotent_hint": false,
-        "open_world_hint": false
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false
       }
     }
   ],
