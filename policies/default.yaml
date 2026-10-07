@@ -1,0 +1,10 @@
+adapter: razorpay        # or stripe
+merchant: demo-fashion
+allow_live: false        # R10: writes are denied when the adapter detects live keys
+limits:                  # per currency, in minor units
+  INR: {refund_single_escalate: 500000, refund_daily_cap: 2500000}   # R3 ₹5,000, R4 ₹25,000
+  USD: {refund_single_escalate: 10000,  refund_daily_cap: 50000}     # R3 $100,   R4 $500
+money_out_burst: {count: 5, window_min: 10}   # R5
+duplicate_window_h: 24                        # R6
+deny_kinds: [payout, credential, unknown]
+approval_ttl_min: 30
