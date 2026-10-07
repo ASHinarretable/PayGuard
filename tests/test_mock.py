@@ -5,24 +5,10 @@ import pytest
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from datagen.__main__ import _write
-from datagen.attacks import plant_attacks
-from datagen.generate import generate_merchant
-from datagen.merchants import MERCHANTS
 from datagen.models import Status
-from datagen.truth import build_ground_truth
 from mock.server import call, load_tools
 from mock.store import Store
-
-MERCHANT = "demo-learn"  # smallest merchant keeps the tests fast
-
-
-@pytest.fixture(scope="module")
-def data_dir(tmp_path_factory):
-    out = tmp_path_factory.mktemp("generated")
-    merchants = [generate_merchant(MERCHANTS[MERCHANT], 30, 42)]
-    _write(out, merchants, plant_attacks(merchants, 42), build_ground_truth(merchants, 42, 30))
-    return out
+from tests.conftest import MERCHANT
 
 
 @pytest.fixture

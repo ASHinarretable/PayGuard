@@ -1,0 +1,25 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - run: uv sync --locked
+      - name: Lint
+        run: uv run ruff check .
+      - name: Core has no provider names
+        run: |
+          if grep -rniE "razorpay|stripe|paypal|cashfree|juspay|rzp_" src/payguard/core; then
+            echo "::error::provider names found in src/payguard/core"; exit 1
+          fi
+      - name: Tests
+        run: uv run pytest -q

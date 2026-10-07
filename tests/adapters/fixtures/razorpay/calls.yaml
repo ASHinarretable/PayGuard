@@ -1,0 +1,71 @@
+# Real-shaped tool calls and the Action each must become. Contract tests check every entry.
+- tool: create_refund
+  args: {payment_id: pay_N8xAbCdEfGhIjK, amount: 49900}
+  expect: {kind: refund, resource_id: pay_N8xAbCdEfGhIjK, amount: {minor: 49900, currency: INR}}
+
+- tool: create_refund
+  args: {payment_id: pay_N8xAbCdEfGhIjK, amount: 49900.0, speed: optimum, notes: {reason: duplicate}}
+  expect: {kind: refund, resource_id: pay_N8xAbCdEfGhIjK, amount: {minor: 49900, currency: INR}}
+
+- tool: create_refund
+  args: {payment_id: pay_N8xAbCdEfGhIjK, amount: "49900"}
+  expect: {kind: refund, amount: {minor: 49900, currency: INR}}
+
+- tool: capture_payment
+  args: {payment_id: pay_Q2mT8xLk3vNa9w, amount: 120000, currency: INR}
+  expect: {kind: capture, resource_id: pay_Q2mT8xLk3vNa9w, amount: {minor: 120000, currency: INR}}
+
+- tool: create_payment_link
+  args: {amount: 249900, currency: INR, description: Denim jacket, customer_email: riya@example.in,
+         customer_contact: "+919812345678", notify_sms: true}
+  expect: {kind: payment_request, amount: {minor: 249900, currency: INR},
+           recipient: {email: riya@example.in, phone: "+919812345678"}}
+
+- tool: payment_link_upi_create
+  args: {amount: 99900, currency: INR, customer_contact: "+919800000000"}
+  expect: {kind: payment_request, recipient: {email: null, phone: "+919800000000"}}
+
+- tool: payment_link_notify
+  args: {payment_link_id: plink_ExjpAUN3gVHrPJ, medium: sms}
+  expect: {kind: notify_customer, resource_id: plink_ExjpAUN3gVHrPJ}
+
+- tool: update_payment
+  args: {payment_id: pay_N8xAbCdEfGhIjK, notes: {ticket: "4411"}}
+  expect: {kind: state_change, resource_id: pay_N8xAbCdEfGhIjK}
+
+- tool: fetch_all_payments
+  args: {count: 10, from: 1759000000}
+  expect: {kind: read}
+
+- tool: create_instant_settlement
+  args: {amount: 5000000}
+  expect: {kind: payout}
+
+- tool: revoke_token
+  args: {customer_id: cust_1Aa00000000001, token_id: token_1Aa00000000001}
+  expect: {kind: credential, resource_id: token_1Aa00000000001}
+
+- tool: fetch_tokens
+  args: {contact: "+919812345678"}
+  expect: {kind: credential}
+
+- tool: some_tool_razorpay_ships_tomorrow
+  args: {amount: 100}
+  expect: {kind: unknown}
+
+# Arguments that must be refused rather than guessed (ClassificationError -> DENY)
+- tool: create_refund
+  args: {payment_id: pay_N8xAbCdEfGhIjK, amount: 499.5}
+  error: whole number of paise
+
+- tool: create_refund
+  args: {payment_id: pay_N8xAbCdEfGhIjK, amount: "₹499"}
+  error: whole number of paise
+
+- tool: create_refund
+  args: {payment_id: pay_N8xAbCdEfGhIjK}
+  error: needs an amount
+
+- tool: create_refund
+  args: {payment_id: pay_N8xAbCdEfGhIjK, amount: true}
+  error: whole number of paise
