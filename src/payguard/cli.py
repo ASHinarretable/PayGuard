@@ -3,6 +3,7 @@
     payguard run --adapter razorpay --upstream mock --merchant demo-fashion
     payguard run --adapter razorpay --upstream docker          # real Razorpay, test keys from .env
     payguard audit --db payguard.db                            # print the audit log
+    payguard approvals list | approve apr_x | reject apr_x     # decide escalated calls
 
 stdout carries the MCP protocol in `run`, so everything human-readable goes to stderr.
 """
@@ -14,12 +15,14 @@ import json
 import os
 import secrets
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import anyio
 from mcp import StdioServerParameters
 
 from payguard.adapters import ADAPTERS
+from payguard.core.approvals import ApprovalQueue
 from payguard.core.audit import AuditLog
 from payguard.core.policy import Policy
 from payguard.env import load_env
@@ -50,13 +53,17 @@ def cmd_run(args: argparse.Namespace) -> None:
     if policy.adapter != args.adapter:
         sys.exit(f"policy {args.policy} is for adapter {policy.adapter!r}, not {args.adapter!r}")
     session_id = args.session or f"ses_{secrets.token_hex(4)}"
-    print(f"payguard: adapter={args.adapter} upstream={args.upstream} session={session_id} db={args.db}",
-          file=sys.stderr)
+    from payguard.intent_llm import checker_from_env
     from payguard.interfaces.mcp_server import run_stdio_proxy
 
+    intent = None if args.no_intent else checker_from_env(env)
+    print(f"payguard: adapter={args.adapter} upstream={args.upstream} session={session_id} db={args.db} "
+          f"mandate={'yes' if args.mandate else 'none'} intent={intent.model if intent else 'off'}",
+          file=sys.stderr)
     anyio.run(lambda: run_stdio_proxy(
         upstream=_upstream(args, env), adapter=args.adapter, policy=policy, db_url=f"sqlite:///{args.db}",
         session_id=session_id, key_id=env.get("RAZORPAY_KEY_ID") if args.upstream == "docker" else None,
+        mandate=args.mandate, intent=intent,
     ))
 
 
@@ -66,6 +73,39 @@ def cmd_audit(args: argparse.Namespace) -> None:
         rules = ",".join(json.loads(e.rules_fired))
         print(f"{e.ts:%Y-%m-%d %H:%M:%S} {e.session_id} {e.verdict:8} {e.tool}{amount}"
               f"{f' [{rules}]' if rules else ''}{f'  {e.reason}' if e.reason else ''}")
+
+
+def cmd_approvals(args: argparse.Namespace) -> None:
+    queue = ApprovalQueue(AuditLog(f"sqlite:///{args.db}"))
+    now = datetime.now(UTC)
+    if args.action == "list":
+        queue.expire_due(now)
+        rows = queue.list(None if args.all else "pending")
+        if not rows:
+            print("no pending approvals" if not args.all else "no approvals")
+        for a in rows:
+            print(f"{a.id}  {a.status:20} {a.session_id}  {a.tool} {a.args_json}")
+            print(f"    rules: {', '.join(json.loads(a.rules_fired))}  |  {a.reason}")
+            if a.intent_check:
+                print(f"    intent: {a.intent_check}")
+            if a.state_json:
+                print(f"    state when escalated: {a.state_json}")
+            if a.result_text:
+                print(f"    result: {a.result_text[:200]}")
+        return
+    if not args.id:
+        sys.exit(f"payguard approvals {args.action} needs an approval id")
+    try:
+        a = queue.decide(args.id, approve=args.action == "approve", by=args.by, now=now)
+    except (KeyError, ValueError) as exc:
+        sys.exit(str(exc))
+    note = " (the running PayGuard will re-check and execute it within a second)" if a.status == "approved" else ""
+    print(f"{a.id}: {a.status}{note}")
+
+
+def cmd_resume(args: argparse.Namespace) -> None:
+    AuditLog(f"sqlite:///{args.db}").resume(args.session)
+    print(f"{args.session}: resumed")
 
 
 def main() -> None:
@@ -83,7 +123,22 @@ def main() -> None:
     run.add_argument("--policy", default="policies/default.yaml")
     run.add_argument("--db", default="payguard.db")
     run.add_argument("--session", help="session id (default: random per process)")
+    run.add_argument("--mandate", help="the human's task for this session, for R8 and the intent check")
+    run.add_argument("--no-intent", action="store_true", help="skip the LLM intent check")
     run.set_defaults(func=cmd_run)
+
+    approvals = sub.add_parser("approvals", help="list, approve or reject escalated calls")
+    approvals.add_argument("action", choices=["list", "approve", "reject"])
+    approvals.add_argument("id", nargs="?")
+    approvals.add_argument("--all", action="store_true", help="list: include decided approvals")
+    approvals.add_argument("--by", default=os.environ.get("USERNAME") or os.environ.get("USER") or "cli")
+    approvals.add_argument("--db", default="payguard.db")
+    approvals.set_defaults(func=cmd_approvals)
+
+    resume = sub.add_parser("resume", help="resume a session the circuit breaker paused")
+    resume.add_argument("session")
+    resume.add_argument("--db", default="payguard.db")
+    resume.set_defaults(func=cmd_resume)
 
     audit = sub.add_parser("audit", help="print the audit log")
     audit.add_argument("--db", default="payguard.db")

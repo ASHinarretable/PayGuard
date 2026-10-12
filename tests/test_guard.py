@@ -85,7 +85,7 @@ async def test_large_refund_escalates(env):
     guard, store, _ = env
     p = payment(store, min_amount=500_100)
     out = await guard.handle(SESSION, "create_refund", {"payment_id": p.id, "amount": p.amount})
-    assert out.is_error and out.text.startswith("PENDING_APPROVAL [R3]")
+    assert out.is_error and out.text.startswith("PENDING_APPROVAL apr_") and "[R3]" in out.text
     assert store.ledger_rows() == []
 
 
@@ -153,7 +153,8 @@ async def test_stdio_proxy_end_to_end(data_dir, tmp_path):
     async with stdio_client(params) as (read, write), ClientSession(read, write) as session:
         init = await session.initialize()
         assert init.server_info.name == "payguard"
-        assert len((await session.list_tools()).tools) == 45
+        names = [t.name for t in (await session.list_tools()).tools]
+        assert len(names) == 46 and "payguard_approval_status" in names  # Razorpay's 45 + PayGuard's own
         listing = await session.call_tool("fetch_all_payments", {"count": 10})
         items = json.loads(listing.content[0].text)["items"]
         captured = next(p for p in items if p["status"] == "captured")

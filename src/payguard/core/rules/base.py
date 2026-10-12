@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from payguard.core.action import Action, ActionKind, Money, ResourceState
 from payguard.core.policy import Policy
+from payguard.core.taint import SessionTaint
 
 
 class Verdict(StrEnum):
@@ -57,6 +58,7 @@ class Context:
     session_id: str
     state: ResourceState | None = None
     is_live: bool = False
+    taint: SessionTaint | None = None  # what this session has read, for R8/R9
 
 
 class Rule:

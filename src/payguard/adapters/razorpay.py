@@ -150,6 +150,29 @@ class RazorpayAdapter:
     def untrusted_paths(self, tool: str) -> list[str]:
         return UNTRUSTED_PATHS if TOOL_KINDS.get(tool) == K.READ else []
 
+    def customer_contacts(self, tool: str, data: Any) -> list[Contact]:
+        """Customers on record in a read result: the payer of each payment and the customer on each
+        payment link, as Razorpay returned them."""
+        found: list[Contact] = []
+
+        def walk(node: Any) -> None:
+            if isinstance(node, dict):
+                if node.get("entity") == "payment" and (node.get("email") or node.get("contact")):
+                    found.append(Contact(email=node.get("email") or None, phone=node.get("contact") or None))
+                if str(node.get("id", "")).startswith("plink_") and isinstance(node.get("customer"), dict):
+                    c = node["customer"]
+                    if c.get("email") or c.get("contact"):
+                        found.append(Contact(email=c.get("email") or None, phone=c.get("contact") or None))
+                for v in node.values():
+                    walk(v)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v)
+
+        if TOOL_KINDS.get(tool) == K.READ:
+            walk(data)
+        return found
+
     def is_live(self) -> bool:
         return self.key_id.startswith("rzp_live_")
 

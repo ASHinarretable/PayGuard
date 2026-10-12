@@ -9,6 +9,8 @@ from payguard.core.rules import (  # noqa: F401
     r05_burst,
     r06_duplicate,
     r07_unit_mixup,
+    r08_provenance,
+    r09_recipient,
     r10_live_mode,
 )
 from payguard.core.rules.base import RULES, Context, PastAction, Rule, RuleResult, Verdict
