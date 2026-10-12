@@ -31,19 +31,27 @@ CREATE TABLE IF NOT EXISTS ledger (
 """
 
 
+_PARSED: dict[tuple[str, float], list] = {}
+
+
 def _read_jsonl(path: Path, model):
+    """Parses once per process and hands out deep copies: evals reset the store hundreds of times."""
     if not path.exists():
         return []
-    with path.open(encoding="utf-8") as f:
-        return [model.model_validate_json(line) for line in f if line.strip()]
+    key = (str(path.resolve()), path.stat().st_mtime)
+    if key not in _PARSED:
+        with path.open(encoding="utf-8") as f:
+            _PARSED[key] = [model.model_validate_json(line) for line in f if line.strip()]
+    return [row.model_copy(deep=True) for row in _PARSED[key]]
 
 
 class Store:
     def __init__(self, data_dir: Path, merchant: str, ledger_path: Path | str = ":memory:",
-                 overrides: dict[str, dict[str, Any]] | None = None) -> None:
+                 overrides: dict[str, dict[str, Any]] | None = None, faults: dict[str, int] | None = None) -> None:
         self.data_dir = Path(data_dir)
         self.merchant = merchant
         self.overrides = overrides or {}
+        self.fault_plan = dict(faults or {})  # tool -> how many calls time out after they went through
         self.ledger = sqlite3.connect(str(ledger_path), check_same_thread=False)
         self.ledger.execute(LEDGER_SCHEMA)
         self.reset()
@@ -62,12 +70,13 @@ class Store:
         self.refund_notes: dict[str, dict[str, str]] = {}
         self.payment_links: dict[str, dict[str, Any]] = {}
         self.instant_settlements: dict[str, dict[str, Any]] = {}
-        self.orders: dict[str, list[Payment]] = defaultdict(list)
-        for p in self.payments.values():
-            self.orders[p.order_id].append(p)
         for payment_id, fields in self.overrides.items():
             if payment_id in self.payments:
                 self.payments[payment_id] = self.payments[payment_id].model_copy(update=fields)
+        self.orders: dict[str, list[Payment]] = defaultdict(list)
+        for p in self.payments.values():
+            self.orders[p.order_id].append(p)
+        self.faults = dict(self.fault_plan)
         last = max(p.created_at for p in self.payments.values())
         # "Now" for the mock is just after the data window, so "this week" means its last 7 days.
         self.now = max(last + 1, int((START + timedelta(days=30)).timestamp()))

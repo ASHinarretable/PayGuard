@@ -36,6 +36,7 @@ class AuditEvent(SQLModel, table=True):
     latency_ms: int = 0
     approval_id: str | None = None
     executed: bool = False  # forwarded upstream and accepted by the provider
+    uncertain: bool = False  # forwarded, but the provider's answer was lost (e.g. a timeout): it may have run
     upstream_error: str | None = None
 
 
@@ -73,6 +74,7 @@ class AuditLog:
 
     def record(self, *, ts: datetime, session_id: str, action: Action, verdict: Verdict, rules: list[str],
                reason: str, latency_ms: int, executed: bool, upstream_error: str | None = None,
+               uncertain: bool = False,
                approval_id: str | None = None, intent_check: str | None = None) -> AuditEvent:
         event = AuditEvent(
             id=new_event_id(ts), ts=_utc(ts), session_id=session_id, provider=action.provider,
@@ -81,7 +83,7 @@ class AuditLog:
             currency=action.amount.currency if action.amount else None,
             args_json=json.dumps(action.raw_args, sort_keys=True, default=str), verdict=verdict.value,
             rules_fired=json.dumps(rules), reason=reason, intent_check=intent_check, latency_ms=latency_ms,
-            approval_id=approval_id, executed=executed, upstream_error=upstream_error,
+            approval_id=approval_id, executed=executed, upstream_error=upstream_error, uncertain=uncertain,
         )
         with Session(self.engine) as s:
             s.add(event)
@@ -105,7 +107,7 @@ class AuditLog:
             return [PastAction(
                 ts=_aware(e.ts), session_id=e.session_id, kind=ActionKind(e.kind), resource_id=e.resource_id,
                 amount=Money(minor=e.amount_minor, currency=e.currency) if e.amount_minor is not None else None,
-                verdict=Verdict(e.verdict), executed=e.executed,
+                verdict=Verdict(e.verdict), executed=e.executed, uncertain=e.uncertain,
             ) for e in rows]
 
     # ---- circuit-breaker pauses (R5) -----------------------------------------------------

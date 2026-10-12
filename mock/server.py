@@ -19,6 +19,7 @@ from mock.razorpay_tools import HANDLERS, ToolError
 from mock.store import Store
 
 TOOLS_FIXTURE = Path("tests/adapters/fixtures/razorpay/tools.json")
+TIMEOUT_TEXT = "request failed: Post \"https://api.razorpay.com/v1/...\": context deadline exceeded (Client.Timeout exceeded)"
 
 
 def load_tools(path: Path = TOOLS_FIXTURE) -> tuple[dict[str, Any], list[types.Tool]]:
@@ -65,6 +66,9 @@ def call(store: Store, tools: dict[str, types.Tool], name: str, args: dict[str, 
         return types.CallToolResult(content=[types.TextContent(type="text", text=str(exc))], is_error=True)
     if _is_write(tool):
         store.record(name, args, ok=True, **_effects(store, name, args, result))
+    if store.faults.get(name, 0) > 0:  # the call went through, but the caller never hears so
+        store.faults[name] -= 1
+        return types.CallToolResult(content=[types.TextContent(type="text", text=TIMEOUT_TEXT)], is_error=True)
     return types.CallToolResult(content=[types.TextContent(type="text", text=json.dumps(result))])
 
 

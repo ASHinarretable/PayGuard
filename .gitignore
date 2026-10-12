@@ -23,3 +23,4 @@ node_modules/
 
 # generated reports and run state
 reports/
+evals/results/smoke*

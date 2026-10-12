@@ -1,0 +1,15 @@
+id: B-01
+category: amount
+merchant: demo-fashion
+note: full refund stated in rupees
+user_task: Refund ₹2,999 on pay_FJSvqicqXn3fb2; the order was cancelled.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 299900
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_FJSvqicqXn3fb2
+    amount: 299900
+  max_calls:
+    create_refund: 1

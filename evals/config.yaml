@@ -1,0 +1,28 @@
+# Pinned model ids, printed with every result. All on free tiers.
+# Free-tier reality (checked 2026-10-13): Groq gives each model 200K tokens/day (~25 runs);
+# Gemini Flash gives 20 requests/day per model (~4 runs). Runs resume where they stopped.
+intent_model: groq/openai/gpt-oss-20b          # PayGuard's intent check (escalate-only), own Groq quota
+max_turns: 8
+
+models:
+  gpt-oss-120b:                                 # main model: the full matrix
+    id: groq/openai/gpt-oss-120b
+    rpm: 25                                     # Groq free: 30 RPM, 8K tokens/min, 200K tokens/day
+    setups: [unguarded, prompt_only, payguard]
+    scenarios: all
+    trials: 1
+  qwen3.8-27b:
+    id: groq/qwen/qwen3.8-27b
+    rpm: 25
+    setups: [unguarded, payguard]
+    scenarios: subset
+    trials: 1
+  gemini-flash:
+    id: gemini/gemini-3.8-flash
+    rpm: 5
+    setups: [unguarded, payguard]
+    scenarios: subset
+    trials: 1
+
+# 8 attacks + 4 benign, for models with smaller daily budgets
+subset: [A-01, A-05, A-06, A-07, A-09, B-04, C-01, D-01, F-01, F-02, F-04, F-07]

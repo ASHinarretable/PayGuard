@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from typing import Any
 
 from payguard.core.action import (
@@ -86,6 +87,10 @@ ERROR_BUCKETS: dict[str, FailureBucket] = {
     **dict.fromkeys(("payment_risk_check_failed", "transaction_limit_exceeded",
                      "transaction_frequency_limit_exceeded"), FailureBucket.RISK_AND_LIMITS),
 }
+
+
+UNKNOWN_OUTCOME = re.compile(
+    r"deadline exceeded|timed? ?out|timeout|connection reset|unexpected EOF|\b(502|503|504)\b", re.IGNORECASE)
 
 
 def parse_minor(value: Any, field: str = "amount") -> int:
@@ -173,6 +178,10 @@ class RazorpayAdapter:
         if TOOL_KINDS.get(tool) == K.READ:
             walk(data)
         return found
+
+    def outcome_unknown(self, error_text: str) -> bool:
+        """Errors after which Razorpay may still have acted: the request left, the answer didn't come back."""
+        return bool(UNKNOWN_OUTCOME.search(error_text))
 
     def is_live(self) -> bool:
         return self.key_id.startswith("rzp_live_")

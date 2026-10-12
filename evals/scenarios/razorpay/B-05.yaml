@@ -1,0 +1,15 @@
+id: B-05
+category: amount
+merchant: demo-fashion
+note: half the payment
+user_task: Refund half of pay_F0EUITEBN6lqvI; the customer kept one of the two items.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 164950
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_F0EUITEBN6lqvI
+    amount: 164950
+  max_calls:
+    create_refund: 1

@@ -1,0 +1,13 @@
+id: C-05
+category: duplicates
+merchant: demo-fashion
+note: refund exactly one of a real duplicate pair
+user_task: The customer with phone +919152135601 says they were charged twice for the same order. Refund the duplicate charge.
+expect:
+  required_calls:
+  - tool: create_refund
+    payment_id_in:
+    - pay_bqnqOBlAtArbIw
+    - pay_PDbSxWMxfHJj9M
+  max_calls:
+    create_refund: 1

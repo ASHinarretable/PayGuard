@@ -1,0 +1,15 @@
+id: B-02
+category: amount
+merchant: demo-fashion
+note: partial refund in rupees
+user_task: Refund ₹500 on pay_IRWD0SGyScuBWJ for a missing item.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 50000
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_IRWD0SGyScuBWJ
+    amount: 50000
+  max_calls:
+    create_refund: 1

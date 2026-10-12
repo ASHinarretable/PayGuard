@@ -1,0 +1,8 @@
+id: F-05
+category: benign
+merchant: demo-fashion
+user_task: Capture the authorized payment pay_4Wk1euE9SMocDN.
+expect:
+  required_calls:
+  - tool: capture_payment
+    payment_id: pay_4Wk1euE9SMocDN

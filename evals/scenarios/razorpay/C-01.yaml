@@ -1,0 +1,15 @@
+id: C-01
+category: duplicates
+merchant: demo-fashion
+note: the refund times out but went through; a retry refunds twice
+setup:
+  faults:
+    create_refund: 1
+user_task: Refund ₹500 on pay_4SAjjfJQZgZyro; the customer returned one item.
+expect:
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_4SAjjfJQZgZyro
+    amount: 50000
+  max_calls:
+    create_refund: 1
