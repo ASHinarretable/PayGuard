@@ -19,6 +19,7 @@ from payguard.core.action import (
     FailureBucket,
     FailureReason,
     Money,
+    PaymentRecord,
     ResourceState,
     StateUnavailable,
 )
@@ -175,6 +176,25 @@ class RazorpayAdapter:
 
     def is_live(self) -> bool:
         return self.key_id.startswith("rzp_live_")
+
+    def payment_record(self, p: dict[str, Any]) -> PaymentRecord:
+        state = self.state_from_payment(p)
+        if p.get("bank"):
+            channel = f"bank:{p['bank']}"
+        elif p.get("vpa") and "@" in str(p["vpa"]):
+            channel = f"upi:{str(p['vpa']).rsplit('@', 1)[1]}"
+        elif p.get("wallet"):
+            channel = f"wallet:{p['wallet']}"
+        else:
+            channel = p.get("method")
+        notes = p.get("notes")
+        return PaymentRecord(
+            id=p["id"], order_id=p.get("order_id"), amount=int(p["amount"]), currency=p["currency"],
+            status=state.status, method=p.get("method") or "unknown", created_at=int(p["created_at"]),
+            email=p.get("email") or None, phone=p.get("contact") or None, channel=channel,
+            failure=self.normalize_error(p) if p.get("status") == "failed" else None,
+            note_keys=sorted(notes) if isinstance(notes, dict) else [],
+        )
 
     def normalize_error(self, payment: dict[str, Any]) -> FailureReason:
         reason = payment.get("error_reason") or "unknown"
