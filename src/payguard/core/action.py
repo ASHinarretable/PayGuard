@@ -92,3 +92,20 @@ class FailureReason(BaseModel):
     bucket: FailureBucket
     code: str  # the provider's own reason code, kept for display
     source: str | None = None
+
+
+class PaymentRecord(BaseModel):
+    """One payment attempt in provider-neutral terms, for analysis (Payment Doctor)."""
+
+    id: str
+    order_id: str | None
+    amount: int  # minor units
+    currency: str
+    status: ResourceStatus
+    method: str
+    created_at: int  # unix seconds
+    email: str | None = None
+    phone: str | None = None
+    channel: str | None = None  # where it can fail: "bank:SBIN", "upi:ybl", "card:Visa", "wallet:paytm"
+    failure: FailureReason | None = None
+    note_keys: list[str] = Field(default_factory=list)

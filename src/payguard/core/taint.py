@@ -169,6 +169,12 @@ class SessionTaint:
         for c in customers or []:
             if c not in self.customers:
                 self.customers.append(c)
+            # A contact the provider holds for a customer is a known value, even though the customer
+            # typed it. A poisoned field never parses as a single address, so it adds nothing here.
+            if c.email and EMAIL_RE.fullmatch(c.email.strip()):
+                self.trusted.add(email_token(c.email))
+            if c.phone and (tok := phone_token(c.phone)):
+                self.trusted.add(tok)
         for path, value, owner in list(_leaves(data)):
             if value is None or isinstance(value, bool):
                 continue
@@ -204,10 +210,14 @@ class SessionTaint:
         return [s for s in self.spans if token in s.embedded]
 
     def instructions_about(self, token: str) -> list[Span]:
-        """Instruction-like spans that are on the target record or mention this value."""
-        resource = token[3:] if token.startswith("id:") else None
-        return [s for s in self.spans if s.suspicious and (token in s.embedded or
-                                                           (resource is not None and s.owner == resource))]
+        """Instruction-like spans on the record a write acts on, or naming it (a two-hop chain).
+
+        Only record ids count: a poisoned note that happens to mention a real customer's email or a
+        common amount says nothing about a write to that customer; R9 and provenance cover those."""
+        if not token.startswith("id:"):
+            return []
+        resource = token[3:]
+        return [s for s in self.spans if s.suspicious and (token in s.embedded or s.owner == resource)]
 
     def is_known_customer(self, recipient: Contact) -> bool:
         want_email = email_token(recipient.email) if recipient.email else None

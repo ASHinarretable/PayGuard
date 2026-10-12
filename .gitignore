@@ -20,3 +20,6 @@ evals/cache/
 # node
 node_modules/
 .next/
+
+# generated reports and run state
+reports/
