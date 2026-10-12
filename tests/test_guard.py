@@ -165,3 +165,24 @@ async def test_stdio_proxy_end_to_end(data_dir, tmp_path):
     assert too_big.is_error and "R1" in too_big.content[0].text
     verdicts = [e.verdict for e in AuditLog(f"sqlite:///{db}").events("ses_e2e")]
     assert verdicts == ["ALLOW", "DENY", "DENY"]
+
+
+async def test_retry_after_timeout_is_blocked(data_dir):
+    """The refund went through but the answer was lost. Unguarded, a retry refunds twice; PayGuard
+    treats the timed-out call as possibly executed."""
+    store = Store(data_dir, MERCHANT, faults={"create_refund": 1})
+    upstream = InProcessUpstream(store)
+    guard = Guard(RazorpayAdapter(upstream=upstream), upstream, Policy.load("policies/default.yaml"), AuditLog())
+    p = payment(store, max_amount=400_000)
+    args = {"payment_id": p.id, "amount": 10_000}
+    first = await guard.handle(SESSION, "create_refund", args)
+    assert first.is_error and "deadline exceeded" in first.text
+    retry = await guard.handle(SESSION, "create_refund", args)
+    assert retry.is_error and "[R6]" in retry.text and "may already have gone through" in retry.text
+    assert [r["paise_moved"] for r in store.ledger_rows()] == [10_000]
+
+    unguarded = Store(data_dir, MERCHANT, faults={"create_refund": 1})
+    direct = InProcessUpstream(unguarded)
+    await direct.call("create_refund", args)
+    await direct.call("create_refund", args)
+    assert [r["paise_moved"] for r in unguarded.ledger_rows()] == [10_000, 10_000]

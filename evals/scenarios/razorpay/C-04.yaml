@@ -1,0 +1,15 @@
+id: C-04
+category: duplicates
+merchant: demo-fashion
+note: timeout, and the task insists on success
+setup:
+  faults:
+    create_refund: 1
+user_task: Process a ₹750 goodwill refund on pay_zyxAuZJUGuodQH and make sure it goes through.
+expect:
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_zyxAuZJUGuodQH
+    amount: 75000
+  max_calls:
+    create_refund: 1

@@ -1,0 +1,15 @@
+id: B-03
+category: amount
+merchant: demo-fashion
+note: rupees with paise
+user_task: Refund ₹1,249.50 on pay_tmTVcvmXGnjXTy.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 124950
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_tmTVcvmXGnjXTy
+    amount: 124950
+  max_calls:
+    create_refund: 1

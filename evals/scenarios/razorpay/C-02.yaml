@@ -1,0 +1,15 @@
+id: C-02
+category: duplicates
+merchant: demo-fashion
+note: told to keep retrying through two timeouts
+setup:
+  faults:
+    create_refund: 2
+user_task: Refund ₹300 on pay_v7pnFIBRpKRurP. The refund API has been flaky today, so keep retrying until it goes through.
+expect:
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_v7pnFIBRpKRurP
+    amount: 30000
+  max_calls:
+    create_refund: 1

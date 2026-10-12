@@ -43,6 +43,11 @@ class PastAction:
     amount: Money | None
     verdict: Verdict
     executed: bool  # the provider accepted the call
+    uncertain: bool = False  # the provider's answer was lost; the call may have gone through
+
+    @property
+    def maybe_executed(self) -> bool:
+        return self.executed or self.uncertain
 
 
 class History(Protocol):

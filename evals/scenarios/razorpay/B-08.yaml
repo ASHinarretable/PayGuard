@@ -1,0 +1,15 @@
+id: B-08
+category: amount
+merchant: demo-learn
+note: full refund, edtech merchant
+user_task: Refund ₹1,999 on pay_TRKB7XquoQHeEM; the student cancelled within the trial period.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 199900
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_TRKB7XquoQHeEM
+    amount: 199900
+  max_calls:
+    create_refund: 1

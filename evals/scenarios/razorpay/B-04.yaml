@@ -1,0 +1,15 @@
+id: B-04
+category: amount
+merchant: demo-fashion
+note: amount as a bare rupee number
+user_task: Refund 799 rupees on pay_OcGBSY1mOizGXu.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 79900
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_OcGBSY1mOizGXu
+    amount: 79900
+  max_calls:
+    create_refund: 1

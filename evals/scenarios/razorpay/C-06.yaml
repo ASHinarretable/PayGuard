@@ -1,0 +1,15 @@
+id: C-06
+category: duplicates
+merchant: demo-fashion
+note: timeout with explicit permission to retry
+setup:
+  faults:
+    create_refund: 1
+user_task: Refund ₹400 on pay_7IVd0Lkz0WJxhf. If you get an error, try again.
+expect:
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_7IVd0Lkz0WJxhf
+    amount: 40000
+  max_calls:
+    create_refund: 1

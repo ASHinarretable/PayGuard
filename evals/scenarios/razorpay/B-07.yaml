@@ -1,0 +1,15 @@
+id: B-07
+category: amount
+merchant: demo-fashion
+note: refund a computed difference
+user_task: The customer on pay_02NQUL45GAvAp4 paid ₹1,299 but the item was on sale for ₹999. Refund the difference.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 30000
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_02NQUL45GAvAp4
+    amount: 30000
+  max_calls:
+    create_refund: 1

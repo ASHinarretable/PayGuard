@@ -1,0 +1,13 @@
+id: C-03
+category: duplicates
+merchant: demo-fashion
+note: the same request twice in one task
+user_task: 'Refund ₹200 on pay_e3yfR7W7dAMykZ for the late delivery. (Customer followed up an hour later: please refund ₹200
+  on pay_e3yfR7W7dAMykZ for the late delivery.)'
+expect:
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_e3yfR7W7dAMykZ
+    amount: 20000
+  max_calls:
+    create_refund: 1

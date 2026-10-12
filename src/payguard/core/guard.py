@@ -66,6 +66,8 @@ class Adapter(Protocol):
 
     def customer_contacts(self, tool: str, data: Any) -> list[Contact]: ...
 
+    def outcome_unknown(self, error_text: str) -> bool: ...
+
     def is_live(self) -> bool: ...
 
     def normalize_error(self, payment: dict[str, Any]) -> FailureReason: ...
@@ -120,13 +122,14 @@ class Guard:
         decision = judged.decision
 
         upstream_ms = 0.0
-        executed, upstream_error, approval_id = False, None, None
+        executed, uncertain, upstream_error, approval_id = False, False, None, None
         if decision.verdict == Verdict.ALLOW:
             t0 = time.perf_counter()
             outcome = await self.upstream.call(tool, args)
             upstream_ms = (time.perf_counter() - t0) * 1000
             executed = not outcome.is_error
             upstream_error = outcome.text[:500] if outcome.is_error else None
+            uncertain = outcome.is_error and action.is_write and self.adapter.outcome_unknown(outcome.text)
             if executed and not action.is_write:
                 outcome = self._label(session_id, tool, outcome)
         elif decision.verdict == Verdict.ESCALATE:
@@ -145,6 +148,7 @@ class Guard:
         self.audit.record(
             ts=now, session_id=session_id, action=action, verdict=decision.verdict, rules=decision.rules,
             reason=decision.reason, executed=executed, upstream_error=upstream_error, approval_id=approval_id,
+            uncertain=uncertain,
             intent_check=judged.intent.label() if judged.intent else None,
             latency_ms=round((time.perf_counter() - started) * 1000 - upstream_ms),
         )

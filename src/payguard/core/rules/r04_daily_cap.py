@@ -25,7 +25,7 @@ class DailyRefundCap(Rule):
         if limits is None:
             return self.fire(Verdict.DENY, f"no refund limits configured for {amount.currency}; failing closed")
         spent = sum(p.amount.minor for p in ctx.history.actions_since(ctx.now - WINDOW)
-                    if p.executed and p.kind == ActionKind.REFUND
+                    if p.maybe_executed and p.kind == ActionKind.REFUND
                     and p.amount is not None and p.amount.currency == amount.currency)
         if spent + amount.minor > limits.refund_daily_cap:
             total = Money(minor=spent + amount.minor, currency=amount.currency)

@@ -9,7 +9,7 @@ from payguard.core.rules.base import Context, Rule, RuleResult, Verdict, fmt, re
 @register
 class DuplicateAction(Rule):
     id = "R6"
-    description = "Same kind, resource and amount as an executed call within the window is a duplicate"
+    description = "Same kind, resource and amount as a call that went through (or may have) is a duplicate"
     kinds = frozenset({ActionKind.REFUND, ActionKind.PAYMENT_REQUEST})
 
     def check(self, ctx: Context) -> RuleResult | None:
@@ -18,10 +18,11 @@ class DuplicateAction(Rule):
             return None
         since = ctx.now - timedelta(hours=ctx.policy.duplicate_window_h)
         for p in ctx.history.actions_since(since):
-            if p.executed and p.kind == a.kind and p.resource_id == a.resource_id and p.amount == a.amount:
+            if p.maybe_executed and p.kind == a.kind and p.resource_id == a.resource_id and p.amount == a.amount:
+                went = "already went through" if p.executed else "may already have gone through (the provider timed out)"
                 return self.fire(
                     Verdict.DENY,
-                    f"duplicate: a {a.kind.value} of {fmt(a.amount)} on {a.resource_id} already went through "
+                    f"duplicate: a {a.kind.value} of {fmt(a.amount)} on {a.resource_id} {went} "
                     f"at {p.ts.isoformat(timespec='seconds')}",
                     hint="If an earlier call timed out, fetch the resource to check before retrying.",
                 )

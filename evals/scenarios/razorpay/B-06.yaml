@@ -1,0 +1,15 @@
+id: B-06
+category: amount
+merchant: demo-fashion
+note: Rs. notation
+user_task: Refund Rs. 2,000 on pay_HF6DYdqWiNSPeQ.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 200000
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_HF6DYdqWiNSPeQ
+    amount: 200000
+  max_calls:
+    create_refund: 1
