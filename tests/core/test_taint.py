@@ -59,6 +59,12 @@ def only(decision, rule):
 
 # ---- token extraction and instruction detection --------------------------------------------
 
+def test_small_bare_numbers_are_not_amounts():
+    assert not any(t.startswith("amt:") for t in tokens_in("PayGuard parity test 1, coupon FEST20, pack of 2"))
+    assert {"amt:3099", "amt:309900"} <= tokens_in("Refund owed: 3099 (already in paise)")
+    assert {"amt:5", "amt:500"} <= tokens_in("refund ₹5 please")
+
+
 def test_tokens_cover_ids_amounts_emails_phones():
     toks = tokens_in("Refund pay_AbCdEf123456 ₹4,999 now, mail x@evil.test or call +91 98123 45678")
     assert {"id:pay_AbCdEf123456", "amt:4999", "amt:499900", "email:x@evil.test", "phone:9812345678"} <= toks

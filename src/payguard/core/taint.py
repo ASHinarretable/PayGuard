@@ -28,7 +28,8 @@ Path = tuple[str | int, ...]
 ID_RE = re.compile(r"\b[a-z]{2,8}_[A-Za-z0-9]{6,}\b")
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+")
 PHONE_RE = re.compile(r"(?<![\w.])\+?\d[\d\s-]{8,14}\d\b")
-AMOUNT_RE = re.compile(r"(?:₹|rs\.?|inr|usd|\$)?\s*(\d[\d,]*(?:\.\d{1,2})?)", re.IGNORECASE)
+AMOUNT_RE = re.compile(r"(₹|\brs\.?|\binr|\busd|\$)?\s*(?<![\w.])(\d[\d,]*(?:\.\d{1,2})?)(?![\w])", re.IGNORECASE)
+MIN_BARE_DIGITS = 3  # without a currency marker, "test 1" or "FEST20" is not an amount
 B64_RE = re.compile(r"(?:b64:)?([A-Za-z0-9+/]{20,}={0,2})")
 
 INSTRUCTION_PATTERNS = (
@@ -70,7 +71,9 @@ def tokens_in(text: str) -> set[str]:
             out.add(tok)
     rest = PHONE_RE.sub(" ", rest)
     for m in AMOUNT_RE.finditer(rest):
-        number = m.group(1).replace(",", "")
+        number = m.group(2).replace(",", "")
+        if not m.group(1) and len(number.split(".")[0]) < MIN_BARE_DIGITS:
+            continue
         if "." in number:
             out.add(f"amt:{round(float(number) * 100)}")
         else:
