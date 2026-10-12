@@ -33,6 +33,7 @@ class AuditEvent(SQLModel, table=True):
     rules_fired: str = "[]"  # JSON list of rule ids
     reason: str = ""
     intent_check: str | None = None
+    intent_ms: int = 0  # part of latency_ms spent waiting on the intent model
     latency_ms: int = 0
     approval_id: str | None = None
     executed: bool = False  # forwarded upstream and accepted by the provider
@@ -75,7 +76,8 @@ class AuditLog:
     def record(self, *, ts: datetime, session_id: str, action: Action, verdict: Verdict, rules: list[str],
                reason: str, latency_ms: int, executed: bool, upstream_error: str | None = None,
                uncertain: bool = False,
-               approval_id: str | None = None, intent_check: str | None = None) -> AuditEvent:
+               approval_id: str | None = None, intent_check: str | None = None,
+               intent_ms: int = 0) -> AuditEvent:
         event = AuditEvent(
             id=new_event_id(ts), ts=_utc(ts), session_id=session_id, provider=action.provider,
             tool=action.tool, kind=action.kind.value, resource_id=action.resource_id,
@@ -83,6 +85,7 @@ class AuditLog:
             currency=action.amount.currency if action.amount else None,
             args_json=json.dumps(action.raw_args, sort_keys=True, default=str), verdict=verdict.value,
             rules_fired=json.dumps(rules), reason=reason, intent_check=intent_check, latency_ms=latency_ms,
+            intent_ms=intent_ms,
             approval_id=approval_id, executed=executed, upstream_error=upstream_error, uncertain=uncertain,
         )
         with Session(self.engine) as s:
