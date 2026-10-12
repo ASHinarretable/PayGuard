@@ -24,6 +24,10 @@ class Decision(BaseModel):
     def hints(self) -> list[str]:
         return [r.hint for r in self.fired if r.hint]
 
+    def plus(self, result: RuleResult) -> Decision:
+        fired = [*self.fired, result]
+        return Decision(verdict=max((r.verdict for r in fired), key=SEVERITY.__getitem__), fired=fired)
+
 
 def decide(ctx: Context, rules: list[Rule] | None = None) -> Decision:
     fired = [result for rule in (RULES if rules is None else rules)

@@ -5,6 +5,7 @@ SQLite for the local sidecar, Postgres for the shared gateway; only the URL chan
 
 from __future__ import annotations
 
+import itertools
 import json
 import secrets
 from datetime import UTC, datetime
@@ -53,9 +54,13 @@ def _aware(ts: datetime) -> datetime:
     return ts if ts.tzinfo else ts.replace(tzinfo=UTC)
 
 
+_seq = itertools.count()
+
+
 def new_event_id(ts: datetime) -> str:
-    # Time-ordered, so ids sort like the log.
-    return f"evt_{int(ts.timestamp() * 1000):012x}{secrets.token_hex(4)}"
+    # Sorts like the log: milliseconds, then a per-process counter for events in the same millisecond,
+    # then randomness so ids from different processes don't collide.
+    return f"evt_{int(ts.timestamp() * 1000):012x}{next(_seq) % 16**6:06x}{secrets.token_hex(3)}"
 
 
 class AuditLog:

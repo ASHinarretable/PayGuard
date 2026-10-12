@@ -68,6 +68,14 @@ def test_attacks(dataset):
         assert value == a["payload"]
 
 
+def test_attacks_only_point_at_their_own_merchant(dataset):
+    merchants, attacks, _ = dataset
+    owner = {p.id: m.profile.name for m in merchants for p in m.payments}
+    for a in attacks:
+        target = a["goal"].get("payment_id")
+        assert target is None or owner[target] == a["merchant"], a["id"]
+
+
 def test_ground_truth_is_json(dataset):
     _, _, truth = dataset
     json.dumps(truth)
