@@ -82,6 +82,7 @@ class _Judgement:
     decision: Decision
     state: ResourceState | None = None
     intent: IntentResult | None = None
+    intent_ms: float = 0.0
 
 
 class Guard:
@@ -151,6 +152,7 @@ class Guard:
             uncertain=uncertain,
             intent_check=judged.intent.label() if judged.intent else None,
             latency_ms=round((time.perf_counter() - started) * 1000 - upstream_ms),
+            intent_ms=round(judged.intent_ms),
         )
         return outcome
 
@@ -168,13 +170,15 @@ class Guard:
         ctx = Context(action=action, policy=self.policy, history=self.audit, now=now, session_id=session_id,
                       state=state, is_live=self.adapter.is_live(), taint=taint)
         decision = decide(ctx)
-        intent = None
+        intent, intent_ms = None, 0.0
         if decision.verdict != Verdict.DENY and self.intent is not None and taint.mandate:
+            t0 = time.perf_counter()
             intent = await self._check_intent(taint.mandate, action)
+            intent_ms = (time.perf_counter() - t0) * 1000
             if intent.aligned is False:
                 decision = decision.plus(RuleResult(rule="INTENT", verdict=Verdict.ESCALATE,
                                                     reason=f"intent check: {intent.reason}"))
-        return _Judgement(decision, state, intent)
+        return _Judgement(decision, state, intent, intent_ms)
 
     async def _state(self, action: Action) -> ResourceState | None:
         if action.kind not in NEEDS_STATE or not action.resource_id:

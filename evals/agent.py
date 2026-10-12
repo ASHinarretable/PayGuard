@@ -135,8 +135,9 @@ CallTool = Callable[[str, dict[str, Any]], Awaitable[tuple[bool, str]]]
 
 
 async def run_agent(llm: LLM, system: str, task: str, call_tool: CallTool, max_turns: int = 10,
-                    salt: str = "") -> Trace:
-    tools = tool_schemas()
+                    salt: str = "", extra_tools: list[dict[str, Any]] | None = None) -> Trace:
+    tools = tool_schemas() + (extra_tools or [])
+    allowed = set(AGENT_TOOLS) | {t["function"]["name"] for t in extra_tools or []}
     trace = Trace(messages=[{"role": "system", "content": system}, {"role": "user", "content": task}])
     for _ in range(max_turns):
         trace.turns += 1
@@ -156,7 +157,7 @@ async def run_agent(llm: LLM, system: str, task: str, call_tool: CallTool, max_t
                 args = json.loads(tc["function"].get("arguments") or "{}")
             except json.JSONDecodeError:
                 args = {}
-            is_error, text = await call_tool(name, args) if name in AGENT_TOOLS else (True, f"unknown tool {name}")
+            is_error, text = await call_tool(name, args) if name in allowed else (True, f"unknown tool {name}")
             trace.tool_calls.append({"tool": name, "args": args, "error": is_error, "result": text[:300]})
             trace.messages.append({"role": "tool", "tool_call_id": tc.get("id"), "name": name,
                                    "content": text[:MAX_TOOL_TEXT]})

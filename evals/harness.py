@@ -27,6 +27,7 @@ from payguard.core.audit import AuditLog
 from payguard.core.guard import Guard, ToolOutcome
 from payguard.core.policy import Policy
 from payguard.intent_llm import LiteLLMIntentChecker
+from payguard.interfaces.mcp_server import STATUS_TOOL
 
 SETUPS = ("unguarded", "prompt_only", "payguard")
 _TOOLS = {t.name: t for t in load_tools()[1]}
@@ -89,6 +90,8 @@ async def run_one(cfg: RunConfig, llm: LLM, scenario: Scenario, setup: str, tria
         guard.start_session(session, scenario.user_task)
 
         async def call_tool(name: str, args: dict[str, Any]) -> tuple[bool, str]:
+            if name == STATUS_TOOL.name:  # PayGuard's own tool, as the MCP proxy offers it
+                return False, guard.approval_status(str(args.get("approval_id", "")), session)
             out = await guard.handle(session, name, args)
             return out.is_error, out.text
     else:
@@ -97,7 +100,10 @@ async def run_one(cfg: RunConfig, llm: LLM, scenario: Scenario, setup: str, tria
             return out.is_error, out.text
 
     started = time.perf_counter()
-    trace = await run_agent(llm, system, scenario.user_task, call_tool, cfg.max_turns, salt=f"t{trial}")
+    extra = [{"type": "function", "function": {"name": STATUS_TOOL.name, "description": STATUS_TOOL.description,
+                                               "parameters": STATUS_TOOL.input_schema}}] if setup == "payguard" else None
+    trace = await run_agent(llm, system, scenario.user_task, call_tool, cfg.max_turns, salt=f"t{trial}",
+                            extra_tools=extra)
     result = score(scenario, store.ledger_rows())
 
     writes_attempted = [c for c in trace.tool_calls if c["tool"] in WRITE_TOOLS]
@@ -120,6 +126,7 @@ async def run_one(cfg: RunConfig, llm: LLM, scenario: Scenario, setup: str, tria
             "rules": sorted({r for e in writes for r in json.loads(e.rules_fired)}),
             "intent": [e.intent_check for e in writes if e.intent_check],
             "latency_ms": [e.latency_ms for e in events],
+            "rules_ms": [e.latency_ms - e.intent_ms for e in events],
         }
     return row
 
@@ -148,6 +155,10 @@ async def run_matrix(cfg: RunConfig, llm: LLM, scenarios: list[Scenario], setups
         except QuotaExhausted as exc:
             log(f"daily quota exhausted for {llm.model}; resume later. ({exc})")
             return i - 1
+        except Exception as exc:  # noqa: BLE001 - one bad run must not stop the batch; it is retried next time
+            log(f"[{i}/{len(todo)}] {s.id} {setup} t{t}  FAILED, will retry on the next start: "
+                f"{type(exc).__name__}: {str(exc)[:200]}")
+            continue
         with out.open("a", encoding="utf-8") as f:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
         flag = "UNSAFE" if row["unsafe"] else ("ok" if row["success"] else "incomplete")

@@ -42,10 +42,11 @@ def summarise(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 all_writes = sum(r["guard"]["write_calls"] for r in rs)
                 item["false_block"] = (blocked, benign_writes)
                 item["escalation"] = (sum(r["guard"]["escalated"] for r in rs), all_writes)
-                lat = sorted(x for r in rs for x in r["guard"]["latency_ms"])
-                if lat:
-                    item["p50_ms"] = statistics.median(lat)
-                    item["p95_ms"] = lat[min(len(lat) - 1, int(0.95 * len(lat)))]
+                for key, field in (("", "latency_ms"), ("rules_", "rules_ms")):
+                    lat = sorted(x for r in rs for x in r["guard"].get(field, r["guard"]["latency_ms"]))
+                    if lat:
+                        item[f"{key}p50_ms"] = round(statistics.median(lat))
+                        item[f"{key}p95_ms"] = lat[min(len(lat) - 1, int(0.95 * len(lat)))]
             out.append(item)
     return out
 
@@ -96,9 +97,10 @@ def render(results_dir: Path, n_scenarios: int) -> str:
     pg = [s for s in summary if s["setup"] == "payguard"]
     if pg:
         parts += ["## PayGuard overhead and escalations", "",
-                  "| Model | p50 added latency | p95 | Escalation rate |", "|---|---:|---:|---:|"]
-        parts += [f"| {s['model'].split('/', 1)[1]} | {s.get('p50_ms', '—')} ms | {s.get('p95_ms', '—')} ms | "
-                  f"{_pct(*s['escalation'])} |" for s in pg]
+                  "| Model | Rules p50 | Rules p95 | With intent check p50 | p95 | Escalation rate |",
+                  "|---|---:|---:|---:|---:|---:|"]
+        parts += [f"| {s['model'].split('/', 1)[1]} | {s.get('rules_p50_ms', '—')} ms | {s.get('rules_p95_ms', '—')} ms | "
+                  f"{s.get('p50_ms', '—')} ms | {s.get('p95_ms', '—')} ms | {_pct(*s['escalation'])} |" for s in pg]
     models = sorted({r["model"] for r in rows})
     parts += ["", (f"Models: {', '.join(models)}. Scored from the mock's ledger (did money actually move), "
                    "not from what the agent said."), ""]
