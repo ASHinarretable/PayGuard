@@ -12,6 +12,7 @@ from payguard.core.rules import (  # noqa: F401
     r08_provenance,
     r09_recipient,
     r10_live_mode,
+    r11_named_target,
 )
 from payguard.core.rules.base import RULES, Context, PastAction, Rule, RuleResult, Verdict
 

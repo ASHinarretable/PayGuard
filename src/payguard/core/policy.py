@@ -33,6 +33,7 @@ class Policy(BaseModel):
     limits: dict[str, CurrencyLimits] = Field(default_factory=dict)
     money_out_burst: Burst = Field(default_factory=Burst)  # R5
     duplicate_window_h: int = Field(default=24, gt=0)  # R6
+    require_named_refund_target: bool = True  # R11
     deny_kinds: list[ActionKind] = Field(
         default_factory=lambda: [ActionKind.PAYOUT, ActionKind.CREDENTIAL, ActionKind.UNKNOWN])
     approval_ttl_min: int = Field(default=30, gt=0)
