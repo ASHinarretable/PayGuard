@@ -17,6 +17,20 @@ models:
     setups: [unguarded, payguard]
     scenarios: subset
     trials: 1
+  # Free tiers big enough for the full 52 x 3 matrix on ONE model (keys: MISTRAL_API_KEY, NVIDIA_NIM_API_KEY).
+  # Verify ids/limits in each console; synthetic data only, since free tiers may train on prompts.
+  mistral-medium:
+    id: mistral/mistral-medium-latest
+    rpm: 20                                     # Experiment (free) plan; limits shown in Admin Console -> Limits
+    setups: [unguarded, prompt_only, payguard]
+    scenarios: all
+    trials: 1
+  kimi-k2-nim:
+    id: nvidia_nim/moonshotai/kimi-k2-instruct  # Kimi via NVIDIA build.nvidia.com (Moonshot's own API has no free tier)
+    rpm: 30                                     # NIM free: ~40 RPM
+    setups: [unguarded, prompt_only, payguard]
+    scenarios: all
+    trials: 1
   gemini-flash:
     id: gemini/gemini-3.8-flash
     rpm: 5
