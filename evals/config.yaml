@@ -19,9 +19,9 @@ models:
     trials: 1
   # Free tiers big enough for the full 52 x 3 matrix on ONE model (keys: MISTRAL_API_KEY, NVIDIA_NIM_API_KEY).
   # Verify ids/limits in each console; synthetic data only, since free tiers may train on prompts.
-  mistral-medium:
-    id: mistral/mistral-medium-latest
-    rpm: 20                                     # Experiment (free) plan; limits shown in Admin Console -> Limits
+  ministral-14b:                                # full matrix on Mistral's free Experiment plan
+    id: mistral/ministral-14b-2512              # Medium/Small/Large are not enabled on the free plan (checked 2026-10-13)
+    rpm: 25                                     # free plan reports 30 req/min, 937K tokens/min for this model
     setups: [unguarded, prompt_only, payguard]
     scenarios: all
     trials: 1
