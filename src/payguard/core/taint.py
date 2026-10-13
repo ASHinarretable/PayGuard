@@ -166,6 +166,9 @@ class SessionTaint:
         if self.mandate:
             self.trusted |= tokens_in(self.mandate)
 
+    def named_in_mandate(self, resource_id: str) -> bool:
+        return bool(self.mandate) and f"id:{resource_id}" in tokens_in(self.mandate)
+
     def observe(self, tool: str, data: Any, untrusted_paths: list[str],
                 customers: list[Contact] | None = None) -> Any:
         """Records a read result and returns it with customer-written strings wrapped."""
