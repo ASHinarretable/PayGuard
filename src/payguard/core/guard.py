@@ -35,7 +35,7 @@ from payguard.core.approvals import (
 )
 from payguard.core.audit import AuditLog
 from payguard.core.decide import Decision, decide
-from payguard.core.intent import IntentChecker, IntentResult
+from payguard.core.intent import IntentChecker, IntentResult, describe
 from payguard.core.policy import Policy
 from payguard.core.rules import RULES, Context, RuleResult, Verdict
 from payguard.core.rules.kind import NEEDS_STATE
@@ -96,6 +96,7 @@ class Guard:
         self.clock = clock
         self.approvals = ApprovalQueue(audit)
         self.sessions: dict[str, SessionTaint] = {}
+        self.steps: dict[str, list[dict[str, object]]] = {}  # each session's write steps, for the intent check
 
     def start_session(self, session_id: str, mandate: str | None = None) -> SessionTaint:
         """Records the human's task for a session. It can be set once, before the agent reads anything."""
@@ -144,6 +145,8 @@ class Guard:
         else:
             outcome = ToolOutcome(is_error=True, text=self._denied(decision))
 
+        if action.is_write:
+            self.steps.setdefault(session_id, []).append({**describe(action), "verdict": decision.verdict.value})
         if "R5" in decision.rules:
             self.audit.pause(session_id, decision.reason, now)
         self.audit.record(
@@ -173,7 +176,7 @@ class Guard:
         intent, intent_ms = None, 0.0
         if decision.verdict != Verdict.DENY and self.intent is not None and taint.mandate:
             t0 = time.perf_counter()
-            intent = await self._check_intent(taint.mandate, action)
+            intent = await self._check_intent(taint.mandate, action, self.steps.get(session_id, []))
             intent_ms = (time.perf_counter() - t0) * 1000
             if intent.aligned is False:
                 decision = decision.plus(RuleResult(rule="INTENT", verdict=Verdict.ESCALATE,
@@ -188,9 +191,10 @@ class Guard:
         except StateUnavailable:
             return None
 
-    async def _check_intent(self, mandate: str, action: Action) -> IntentResult:
+    async def _check_intent(self, mandate: str, action: Action,
+                            earlier: list[dict[str, object]]) -> IntentResult:
         try:
-            return await self.intent.check(mandate, action)
+            return await self.intent.check(mandate, action, earlier=list(earlier))
         except Exception as exc:  # noqa: BLE001 - a backstop that errors must not block or allow anything
             return IntentResult(aligned=None, reason=f"check failed: {type(exc).__name__}")
 
