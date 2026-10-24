@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "C:\\Users\\Atharva Pawar\\.local\\bin\\uv.exe",
+      "runtimeArgs": ["run", "--directory", "C:\\Users\\Atharva Pawar\\OneDrive\\Desktop\\2025 Tech\\Projectss4me\\PayGuard",
+                      "payguard", "dashboard", "--db", "reports/demo.payguard.db", "--port", "8787"],
+      "port": 8787
+    }
+  ]
+}

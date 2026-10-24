@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+/* Design tokens: one palette, redefined for dark. Components only use these names. */
+:root {
+  --bg: oklch(98.4% 0.003 260);
+  --panel: oklch(100% 0 0);
+  --panel-2: oklch(97% 0.004 260);
+  --ink: oklch(21% 0.02 265);
+  --muted: oklch(52% 0.02 265);
+  --line: oklch(91.5% 0.006 260);
+  --accent: oklch(52% 0.2 268);
+  --accent-soft: oklch(95% 0.03 268);
+  --allow: oklch(55% 0.14 155);
+  --allow-soft: oklch(95.5% 0.04 155);
+  --deny: oklch(56% 0.2 25);
+  --deny-soft: oklch(95.5% 0.03 25);
+  --esc: oklch(62% 0.15 65);
+  --esc-soft: oklch(96% 0.045 75);
+  --read: oklch(55% 0.02 265);
+  --read-soft: oklch(95.5% 0.006 265);
+  --shadow: 0 1px 2px oklch(0% 0 0 / 0.05), 0 4px 16px oklch(0% 0 0 / 0.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: oklch(16% 0.012 265);
+    --panel: oklch(20% 0.014 265);
+    --panel-2: oklch(23% 0.014 265);
+    --ink: oklch(94% 0.008 265);
+    --muted: oklch(70% 0.02 265);
+    --line: oklch(29% 0.016 265);
+    --accent: oklch(72% 0.15 268);
+    --accent-soft: oklch(28% 0.06 268);
+    --allow: oklch(76% 0.15 155);
+    --allow-soft: oklch(28% 0.05 155);
+    --deny: oklch(72% 0.17 25);
+    --deny-soft: oklch(29% 0.06 25);
+    --esc: oklch(80% 0.14 75);
+    --esc-soft: oklch(30% 0.05 70);
+    --read: oklch(72% 0.02 265);
+    --read-soft: oklch(26% 0.014 265);
+    --shadow: none;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-allow: var(--allow);
+  --color-allow-soft: var(--allow-soft);
+  --color-deny: var(--deny);
+  --color-deny-soft: var(--deny-soft);
+  --color-esc: var(--esc);
+  --color-esc-soft: var(--esc-soft);
+  --color-read: var(--read);
+  --color-read-soft: var(--read-soft);
+  --shadow-card: var(--shadow);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+}
+
+html { background: var(--bg); color: var(--ink); }
+body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+@keyframes arrive { from { background: color-mix(in oklch, var(--accent) 16%, transparent); transform: translateY(-4px); opacity: .4; } to { background: transparent; transform: none; opacity: 1; } }
+.arrive { animation: arrive 900ms cubic-bezier(.2,.7,.2,1); }
+@media (prefers-reduced-motion: reduce) { .arrive { animation: none; } }

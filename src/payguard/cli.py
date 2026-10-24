@@ -4,6 +4,7 @@
     payguard run --adapter razorpay --upstream docker          # real Razorpay, test keys from .env
     payguard audit --db payguard.db                            # print the audit log
     payguard approvals list | approve apr_x | reject apr_x     # decide escalated calls
+    payguard dashboard --db payguard.db                        # http://127.0.0.1:8787
 
 stdout carries the MCP protocol in `run`, so everything human-readable goes to stderr.
 """
@@ -108,6 +109,16 @@ def cmd_resume(args: argparse.Namespace) -> None:
     print(f"{args.session}: resumed")
 
 
+def cmd_dashboard(args: argparse.Namespace) -> None:
+    import uvicorn
+
+    from payguard.interfaces.api import create_app
+
+    app = create_app(f"sqlite:///{args.db}", Path(args.reports), Path(args.results), Path(args.static))
+    print(f"payguard dashboard: http://{args.host}:{args.port}/  (audit db {args.db})", file=sys.stderr)
+    uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="payguard")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -134,6 +145,15 @@ def main() -> None:
     approvals.add_argument("--by", default=os.environ.get("USERNAME") or os.environ.get("USER") or "cli")
     approvals.add_argument("--db", default="payguard.db")
     approvals.set_defaults(func=cmd_approvals)
+
+    dash = sub.add_parser("dashboard", help="serve the dashboard and its API")
+    dash.add_argument("--db", default="payguard.db")
+    dash.add_argument("--reports", default="reports")
+    dash.add_argument("--results", default="evals/results")
+    dash.add_argument("--static", default="web/out", help="the built dashboard (cd web && npm run build)")
+    dash.add_argument("--host", default="127.0.0.1")
+    dash.add_argument("--port", type=int, default=8787)
+    dash.set_defaults(func=cmd_dashboard)
 
     resume = sub.add_parser("resume", help="resume a session the circuit breaker paused")
     resume.add_argument("session")
