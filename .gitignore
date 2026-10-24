@@ -24,3 +24,9 @@ node_modules/
 # generated reports and run state
 reports/
 evals/results/smoke*
+
+# dashboard build
+web/node_modules/
+web/.next/
+web/out/
+web/next-env.d.ts

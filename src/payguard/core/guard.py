@@ -223,10 +223,11 @@ class Guard:
 
     async def process_approved(self) -> list[Approval]:
         """Executes calls a human approved: re-checks the state-dependent rules, then runs the pinned
-        arguments. Safe to call from several processes; each approval runs at most once."""
+        arguments. Safe to call from several processes; each approval runs at most once, and only by
+        the guard serving that session (several guards can share one approval database)."""
         done = []
         for approval in self.approvals.list(APPROVED):
-            if not self.approvals.claim(approval.id):
+            if approval.session_id not in self.sessions or not self.approvals.claim(approval.id):
                 continue
             done.append(await self._execute_approved(approval))
         return [self.approvals.get(a.id) for a in done]

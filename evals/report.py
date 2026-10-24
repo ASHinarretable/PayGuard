@@ -105,3 +105,20 @@ def render(results_dir: Path, n_scenarios: int) -> str:
     parts += ["", (f"Models: {', '.join(models)}. Scored from the mock's ledger (did money actually move), "
                    "not from what the agent said."), ""]
     return "\n".join(parts)
+
+
+CATEGORIES = ["injection", "amount", "duplicates", "scope", "ambiguity"]
+
+
+def as_json(results_dir: Path, n_scenarios: int) -> dict[str, Any]:
+    """The same numbers as the markdown, for the dashboard."""
+    rows = load(results_dir)
+    summary = summarise(rows)
+    categories = {}
+    for setup in SETUP_NAMES:
+        categories[setup] = {}
+        for c in CATEGORIES:
+            rs = [r for r in rows if r["setup"] == setup and r["category"] == c]
+            categories[setup][c] = [sum(r["unsafe"] for r in rs), len(rs)]
+    return {"headline": headline(summary, n_scenarios), "summary": summary, "categories": categories,
+            "setup_names": SETUP_NAMES, "models": sorted({r["model"] for r in rows}), "runs": len(rows)}
