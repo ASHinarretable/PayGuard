@@ -1,4 +1,4 @@
-"""The agent under test: a plain LiteLLM tool-calling loop. Same loop, tools and model for every
+"""The agent under test: a plain tool-calling loop (payguard.llm). Same loop, tools and model for every
 setup; only the system prompt (prompt-only defence) or the tool channel (PayGuard) changes.
 
 Model answers are cached on disk by a hash of the request, so re-scoring or resuming never spends
@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from mock.server import load_tools
+from payguard import llm
 
 SYSTEM = (
     "You are a payments operations assistant for the merchant '{merchant}', working in their Razorpay "
@@ -74,6 +75,15 @@ class Trace:
     error: str | None = None
 
 
+def _delay_from_text(text: str) -> float | None:
+    """'try again in 2.5s', 'retry in 800ms', Gemini's 'retryDelay': '10s'."""
+    m = re.search(r"(?:retry|try again) in ([\d.]+)\s*(ms|s)", text, re.IGNORECASE)
+    if m:
+        return float(m.group(1)) / (1000 if m.group(2) == "ms" else 1)
+    m = re.search(r"retryDelay\W+([\d.]+)s", text)
+    return float(m.group(1)) if m else None
+
+
 class QuotaExhausted(RuntimeError):
     """Out of daily quota: stop and resume tomorrow, rather than retrying for hours."""
 
@@ -99,34 +109,24 @@ class LLM:
         path = folder / f"{self._key(messages, tools)}.json"
         if path.exists():
             return json.loads(path.read_text(encoding="utf-8"))
-        import litellm
-
         for attempt in range(self.max_retries):
             wait = self.min_interval - (time.monotonic() - self._last)
             if wait > 0:
                 await asyncio.sleep(wait)
             self._last = time.monotonic()
             try:
-                resp = await litellm.acompletion(model=self.model, messages=messages, tools=tools,
-                                                 temperature=0, timeout=90)
+                resp = await llm.chat(self.model, messages, tools=tools, temperature=0, timeout=90)
                 break
-            except (litellm.RateLimitError, litellm.ServiceUnavailableError, litellm.InternalServerError,
-                    litellm.APIConnectionError, litellm.Timeout) as exc:
+            except (llm.RateLimited, llm.Unavailable) as exc:
                 text = str(exc)
                 if re.search(r"per ?day|daily|PerDay|tokens per day|TPD|RPD", text):
                     raise QuotaExhausted(text[:300]) from exc
-                m = re.search(r"(?:retry|try again) in ([\d.]+)\s*(ms|s)|retryDelay\W+([\d.]+)(s)", text, re.IGNORECASE)
-                if m and m.group(3):
-                    m = re.search(r"retryDelay\W+([\d.]+)(s)", text)
-                delay = float(m.group(1)) / (1000 if m and m.group(2) == "ms" else 1) if m else 2 ** attempt * 5
+                delay = exc.retry_after or _delay_from_text(text) or 2 ** attempt * 5
                 await asyncio.sleep(min(delay, 120) + random.uniform(0, 1))
         else:
             raise RuntimeError(f"{self.model}: still failing after {self.max_retries} retries")
-        msg = resp.choices[0].message.model_dump(exclude_none=True)
-        msg.pop("function_call", None)
-        usage = getattr(resp, "usage", None)
-        out = {"message": msg, "prompt_tokens": getattr(usage, "prompt_tokens", 0) or 0,
-               "completion_tokens": getattr(usage, "completion_tokens", 0) or 0}
+        msg = {k: v for k, v in resp.message.items() if v is not None and k != "function_call"}
+        out = {"message": msg, "prompt_tokens": resp.prompt_tokens, "completion_tokens": resp.completion_tokens}
         path.write_text(json.dumps(out, default=str), encoding="utf-8")
         return out
 

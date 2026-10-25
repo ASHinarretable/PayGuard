@@ -11,6 +11,7 @@ import re
 from typing import Any
 
 from doctor.report import Report, rupees, when
+from payguard import llm
 
 DEFAULT_MODEL = "gemini/gemini-flash-latest"
 RUPEE_RE = re.compile(r"₹\s?([\d,]+(?:\.\d{1,2})?)")
@@ -61,18 +62,15 @@ def template(r: Report) -> str:
 async def narrate(r: Report, model: str | None = None) -> Report:
     model = model or os.environ.get("DOCTOR_MODEL", DEFAULT_MODEL)
     payload = facts(r)
-    key = os.environ.get("GROQ_API_KEY" if model.startswith("groq/") else "GEMINI_API_KEY", "")
-    if not model.startswith("ollama/") and (not key or key.endswith("xxx")):
+    if not llm.has_key(model):
         r.narrative, r.narrative_source = template(r), "template"
         return r
-    import litellm
-
     try:
-        response = await litellm.acompletion(
-            model=model, temperature=0, timeout=30,
+        response = await llm.chat(
+            model, temperature=0, timeout=30,
             messages=[{"role": "system", "content": SYSTEM},
                       {"role": "user", "content": json.dumps(payload, ensure_ascii=False, indent=1)}])
-        text = (response.choices[0].message.content or "").strip()
+        text = (response.message.get("content") or "").strip()
     except Exception as exc:  # noqa: BLE001 - the report stands without the narrative
         r.narrative, r.narrative_source = template(r), "template"
         r.narrative_warnings = [f"model call failed ({type(exc).__name__}); used the template"]
