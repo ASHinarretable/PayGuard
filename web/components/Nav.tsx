@@ -25,14 +25,14 @@ export function Nav() {
           <ShieldCheck className="size-6 text-accent" strokeWidth={2.2} />
           PayGuard
         </Link>
-        <nav className="-mx-1 flex flex-1 gap-1 overflow-x-auto">
+        <nav className="order-last -mx-1 flex w-full gap-1 overflow-x-auto [scrollbar-width:none] sm:order-none sm:w-auto sm:flex-1 [&::-webkit-scrollbar]:hidden">
           {LINKS.map(({ href, label, icon: Icon }) => {
             const on = path?.startsWith(href.slice(0, -1));
             return (
-              <Link key={href} href={href}
+              <Link key={href} href={href} title={label} aria-label={label}
                 className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors ${on ? "bg-panel-2 font-medium text-ink" : "text-muted hover:text-ink"}`}>
-                <Icon className="size-4" />
-                {label}
+                <Icon className="size-4 shrink-0" />
+                <span className={on ? "" : "hidden lg:inline"}>{label}</span>
                 {href === "/approvals/" && pending > 0 && (
                   <span className="tabular rounded-full bg-esc px-1.5 text-[11px] font-bold text-white">{pending}</span>
                 )}
@@ -41,8 +41,8 @@ export function Nav() {
           })}
         </nav>
         {mode && (
-          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${mode === "live" ? "bg-allow-soft text-allow" : "bg-esc-soft text-esc"}`}>
-            {mode === "live" ? "● Live" : "Replay of a recorded run"}
+          <span className={`ml-auto rounded-full px-2.5 py-0.5 text-xs font-semibold sm:ml-0 ${mode === "live" ? "bg-allow-soft text-allow" : "bg-esc-soft text-esc"}`}>
+            {mode === "live" ? "● Live" : <><span className="lg:hidden">Replay</span><span className="hidden lg:inline">Replay of a recorded run</span></>}
           </span>
         )}
       </div>
