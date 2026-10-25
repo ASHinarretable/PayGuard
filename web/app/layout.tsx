@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Nav } from "@/components/Nav";
+import { themeBootScript } from "@/lib/theme";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,7 +11,10 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body className="min-h-screen bg-bg font-sans text-ink">
         <Nav />
         <main className="mx-auto max-w-6xl px-4 pb-20 pt-8 sm:px-6">{children}</main>
