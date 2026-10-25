@@ -64,10 +64,27 @@
   --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
 }
 
-html { background: var(--bg); color: var(--ink); }
-body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; }
+html { background: var(--bg); color: var(--ink); overflow-x: clip; }
+body { font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; overflow-x: clip; }
 .tabular { font-variant-numeric: tabular-nums; }
 
 @keyframes arrive { from { background: color-mix(in oklch, var(--accent) 16%, transparent); transform: translateY(-4px); opacity: .4; } to { background: transparent; transform: none; opacity: 1; } }
 .arrive { animation: arrive 900ms cubic-bezier(.2,.7,.2,1); }
 @media (prefers-reduced-motion: reduce) { .arrive { animation: none; } }
+
+/* project page atmosphere */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklch, var(--line) 70%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--line) 70%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 0%, black 30%, transparent 75%);
+}
+.text-shine {
+  background: linear-gradient(100deg, var(--accent), color-mix(in oklch, var(--accent) 45%, var(--allow)) 55%, var(--allow));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 700ms cubic-bezier(.2,.7,.2,1) both; }
+.rise-2 { animation-delay: 120ms; } .rise-3 { animation-delay: 240ms; } .rise-4 { animation-delay: 360ms; }
+@media (prefers-reduced-motion: reduce) { .rise { animation: none; } }
