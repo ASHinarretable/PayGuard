@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.razorpay.example
 
 # python
 .venv/

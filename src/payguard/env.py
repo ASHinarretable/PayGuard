@@ -14,3 +14,16 @@ def load_env(path: str | Path = ".env") -> dict[str, str]:
                 key, value = line.split("=", 1)
                 env[key.strip()] = value.strip()
     return env
+
+
+def read_env_value(path: str | Path, key: str) -> str | None:
+    """One value from an env file, without keeping the file's other lines (secrets) in memory."""
+    p = Path(path)
+    if not p.exists():
+        return None
+    with p.open(encoding="utf-8") as f:
+        for line in f:
+            name, sep, value = line.partition("=")
+            if sep and name.strip() == key and not line.lstrip().startswith("#"):
+                return value.strip()
+    return None

@@ -26,7 +26,7 @@ from payguard.adapters.razorpay import RazorpayAdapter
 from payguard.core.audit import AuditLog
 from payguard.core.guard import Guard, ToolOutcome
 from payguard.core.policy import Policy
-from payguard.intent_llm import LiteLLMIntentChecker
+from payguard.intent_llm import LLMIntentChecker
 from payguard.interfaces.mcp_server import STATUS_TOOL
 
 SETUPS = ("unguarded", "prompt_only", "payguard")
@@ -84,7 +84,7 @@ async def run_one(cfg: RunConfig, llm: LLM, scenario: Scenario, setup: str, tria
     audit = None
     if setup == "payguard":
         audit = AuditLog()
-        intent = LiteLLMIntentChecker(cfg.intent_model) if cfg.intent_model else None
+        intent = LLMIntentChecker(cfg.intent_model) if cfg.intent_model else None
         guard = Guard(RazorpayAdapter(upstream=direct), direct, cfg.policy, audit, intent=intent)
         session = f"ses_{scenario.id}_{trial}"
         guard.start_session(session, scenario.user_task)

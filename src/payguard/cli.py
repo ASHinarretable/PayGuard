@@ -21,14 +21,26 @@ from pathlib import Path
 
 import anyio
 from mcp import StdioServerParameters
+from mcp.client.stdio import get_default_environment
 
 from payguard.adapters import ADAPTERS
 from payguard.core.approvals import ApprovalQueue
 from payguard.core.audit import AuditLog
 from payguard.core.policy import Policy
-from payguard.env import load_env
+from payguard.env import load_env, read_env_value
 
 DOCKER_IMAGE = "razorpay-mcp:main"
+
+
+PROVIDER_ENV = ".env.razorpay"  # RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET only; handed to Docker, never read by PayGuard
+
+
+def _provider_key_id(args: argparse.Namespace, env: dict[str, str]) -> str | None:
+    """PayGuard needs only the key id (its rzp_live_/rzp_test_ prefix decides R10), never the secret."""
+    path = Path(args.provider_env)
+    if path.exists():
+        return read_env_value(path, "RAZORPAY_KEY_ID")
+    return env.get("RAZORPAY_KEY_ID")
 
 
 def _upstream(args: argparse.Namespace, env: dict[str, str]) -> StdioServerParameters:
@@ -38,11 +50,19 @@ def _upstream(args: argparse.Namespace, env: dict[str, str]) -> StdioServerParam
             cmd += ["--ledger", str(Path(args.ledger).resolve())]
         return StdioServerParameters(command=cmd[0], args=cmd[1:], cwd=str(Path.cwd()))
     if args.upstream == "docker":
+        # The Docker client gets a minimal environment, never PayGuard's own (which may hold model keys).
+        base_env = get_default_environment()
+        path = Path(args.provider_env)
+        if path.exists():
+            # Docker reads the secret straight from the file; it never enters PayGuard's process.
+            return StdioServerParameters(command="docker", env=base_env,
+                                         args=["run", "--rm", "-i", "--env-file", str(path.resolve()), args.image])
+        print(f"payguard: {args.provider_env} not found; passing Razorpay keys from .env. Put them in "
+              f"{args.provider_env} so PayGuard never holds the secret.", file=sys.stderr)
         keys = {k: env.get(k, "") for k in ("RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET")}
         return StdioServerParameters(
-            command="docker",
+            command="docker", env={**base_env, **keys},
             args=["run", "--rm", "-i", "-e", "RAZORPAY_KEY_ID", "-e", "RAZORPAY_KEY_SECRET", args.image],
-            env={**os.environ, **keys},
         )
     command, *rest = args.upstream.split()
     return StdioServerParameters(command=command, args=rest)
@@ -63,7 +83,7 @@ def cmd_run(args: argparse.Namespace) -> None:
           file=sys.stderr)
     anyio.run(lambda: run_stdio_proxy(
         upstream=_upstream(args, env), adapter=args.adapter, policy=policy, db_url=f"sqlite:///{args.db}",
-        session_id=session_id, key_id=env.get("RAZORPAY_KEY_ID") if args.upstream == "docker" else None,
+        session_id=session_id, key_id=_provider_key_id(args, env) if args.upstream == "docker" else None,
         mandate=args.mandate, intent=intent,
     ))
 
@@ -135,6 +155,8 @@ def main() -> None:
     run.add_argument("--data", default="data/generated", help="mock upstream only: generated data directory")
     run.add_argument("--ledger", help="mock upstream only: SQLite path for the mock's write ledger")
     run.add_argument("--image", default=DOCKER_IMAGE, help="docker upstream only")
+    run.add_argument("--provider-env", default=PROVIDER_ENV,
+                     help="docker upstream only: env file with the provider's keys, read by Docker, not PayGuard")
     run.add_argument("--policy", default="policies/default.yaml")
     run.add_argument("--db", default="payguard.db")
     run.add_argument("--session", help="session id (default: random per process)")

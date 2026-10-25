@@ -50,9 +50,9 @@ async def record(use_intent: bool) -> None:
     intent = None
     if use_intent:
         os.environ.setdefault("GROQ_API_KEY", load_env().get("GROQ_API_KEY", ""))
-        from payguard.intent_llm import LiteLLMIntentChecker
+        from payguard.intent_llm import LLMIntentChecker
 
-        intent = LiteLLMIntentChecker("groq/openai/gpt-oss-20b")
+        intent = LLMIntentChecker("groq/openai/gpt-oss-20b")
     if DB.exists():
         DB.unlink()
     audit = AuditLog(f"sqlite:///{DB}")
