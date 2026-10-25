@@ -69,7 +69,7 @@ export function Segmented<T extends string>({ value, options, onChange }: { valu
     <div className="inline-flex rounded-lg border border-line bg-panel p-0.5" role="group">
       {options.map((o) => (
         <button key={o.value} onClick={() => onChange(o.value)}
-          className={`rounded-md px-3 py-1.5 text-sm transition-colors ${value === o.value ? "bg-accent text-white dark:text-bg" : "text-muted hover:text-ink"}`}>
+          className={`rounded-md px-3 py-1.5 text-sm transition-colors ${value === o.value ? "bg-accent text-white" : "text-muted hover:text-ink"}`}>
           {o.label}
         </button>
       ))}

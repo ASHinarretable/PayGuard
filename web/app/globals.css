@@ -39,8 +39,31 @@
     --read: oklch(72% 0.02 265);
     --read-soft: oklch(26% 0.014 265);
     --shadow: none;
+    color-scheme: dark;
   }
 }
+/* Chosen in the header (ThemeToggle): wins over the system setting either way. */
+:root[data-theme="dark"] {
+  --bg: oklch(16% 0.012 265);
+  --panel: oklch(20% 0.014 265);
+  --panel-2: oklch(23% 0.014 265);
+  --ink: oklch(94% 0.008 265);
+  --muted: oklch(70% 0.02 265);
+  --line: oklch(29% 0.016 265);
+  --accent: oklch(72% 0.15 268);
+  --accent-soft: oklch(28% 0.06 268);
+  --allow: oklch(76% 0.15 155);
+  --allow-soft: oklch(28% 0.05 155);
+  --deny: oklch(72% 0.17 25);
+  --deny-soft: oklch(29% 0.06 25);
+  --esc: oklch(80% 0.14 75);
+  --esc-soft: oklch(30% 0.05 70);
+  --read: oklch(72% 0.02 265);
+  --read-soft: oklch(26% 0.014 265);
+  --shadow: none;
+  color-scheme: dark;
+}
+:root[data-theme="light"] { color-scheme: light; }
 
 @theme inline {
   --color-bg: var(--bg);

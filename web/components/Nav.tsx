@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Activity, BarChart3, Home, ShieldCheck, Stethoscope, UserCheck } from "lucide-react";
 import { useJSON, useMode } from "@/lib/api";
 import type { Approval } from "@/lib/types";
+import { ThemeToggle } from "./ThemeToggle";
 
 const LINKS = [
   { href: "/", label: "Overview", icon: Home },
@@ -41,11 +42,14 @@ export function Nav() {
             );
           })}
         </nav>
+        <div className="ml-auto flex items-center gap-2 sm:ml-0">
         {mode && (
-          <span className={`ml-auto rounded-full px-2.5 py-0.5 text-xs font-semibold sm:ml-0 ${mode === "live" ? "bg-allow-soft text-allow" : "bg-esc-soft text-esc"}`}>
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold sm:ml-0 ${mode === "live" ? "bg-allow-soft text-allow" : "bg-esc-soft text-esc"}`}>
             {mode === "live" ? "● Live" : <><span className="lg:hidden">Replay</span><span className="hidden lg:inline">Replay of a recorded run</span></>}
           </span>
         )}
+        <ThemeToggle />
+        </div>
       </div>
     </header>
   );
