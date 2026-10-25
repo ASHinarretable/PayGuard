@@ -23,7 +23,7 @@ export default function EvalsPage() {
   const rows = d.summary.filter((s) => s.model === main);
   const get = (setup: string) => rows.find((s) => s.setup === setup);
   const un = get("unguarded"), po = get("prompt_only"), pg = get("payguard");
-  const chart = d.summary.map((s) => ({ ...s, name: `${d.setup_names[s.setup]}${models.length > 1 ? ` · ${shortModel(s.model)}` : ""}`, rate: rate(s) }));
+  const chart = d.summary.map((s) => ({ ...s, name: `${d.setup_names[s.setup]}${models.length > 1 ? ` · ${shortModel(s.model)}` : ""}`, rate: rate(s), bar: Math.max(rate(s), 0.6) })); // a zero still shows as a sliver, labelled 0%
 
   return (
     <>
@@ -49,9 +49,9 @@ export default function EvalsPage() {
                 <CartesianGrid vertical={false} stroke="var(--line)" />
                 <XAxis dataKey="name" tick={{ fill: "var(--muted)", fontSize: 12 }} axisLine={false} tickLine={false} interval={0} />
                 <YAxis unit="%" tick={{ fill: "var(--muted)", fontSize: 12 }} axisLine={false} tickLine={false} domain={[0, (max: number) => Math.max(10, Math.ceil(max / 10) * 10)]} />
-                <Tooltip cursor={{ fill: "var(--panel-2)" }} formatter={(v) => `${Math.round(Number(v))}%`}
+                <Tooltip cursor={{ fill: "var(--panel-2)" }} formatter={(_v, _n, item) => `${Math.round(Number(item.payload.rate))}%`}
                   contentStyle={{ background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 8, color: "var(--ink)" }} />
-                <Bar dataKey="rate" radius={[6, 6, 0, 0]} barSize={46}>
+                <Bar dataKey="bar" radius={[6, 6, 0, 0]} barSize={46}>
                   {chart.map((c) => <Cell key={c.name} fill={SETUP_COLOR[c.setup]} />)}
                   <LabelList dataKey="rate" position="top" formatter={(v: unknown) => `${Math.round(Number(v))}%`} style={{ fill: "var(--ink)", fontSize: 12, fontWeight: 600 }} />
                 </Bar>
@@ -94,9 +94,9 @@ export default function EvalsPage() {
             <thead className="text-left text-[13px] text-muted">
               <tr>
                 <th className="pb-2 font-medium">Model</th><th className="pb-2 font-medium">Setup</th>
-                <th className="pb-2 text-right font-medium">Unsafe action rate</th><th className="pb-2 text-right font-medium">₹ at risk</th>
-                <th className="pb-2 text-right font-medium">Benign success</th><th className="pb-2 text-right font-medium">False block rate</th>
-                <th className="pb-2 text-right font-medium">PayGuard p50 / p95</th>
+                <th className="pb-2 pl-4 text-right font-medium">Unsafe action rate</th><th className="pb-2 pl-4 text-right font-medium">₹ at risk</th>
+                <th className="pb-2 pl-4 text-right font-medium">Benign success</th><th className="pb-2 pl-4 text-right font-medium">False block rate</th>
+                <th className="pb-2 pl-4 text-right font-medium">PayGuard p50 / p95</th>
               </tr>
             </thead>
             <tbody>
@@ -104,11 +104,11 @@ export default function EvalsPage() {
                 <tr key={s.model + s.setup} className="border-t border-line">
                   <td className="py-2.5 pr-3">{shortModel(s.model)}</td>
                   <td className="py-2.5 pr-3"><span className="inline-flex items-center gap-2"><span className="size-2 rounded-full" style={{ background: SETUP_COLOR[s.setup] }} />{d.setup_names[s.setup]}</span></td>
-                  <td className="tabular py-2.5 text-right">{pct([s.unsafe, s.attack_runs])} <span className="text-muted">({s.unsafe}/{s.attack_runs})</span></td>
-                  <td className="tabular py-2.5 text-right">{money(s.paise_at_risk)}</td>
-                  <td className="tabular py-2.5 text-right">{pct([s.benign_ok, s.benign_runs])} <span className="text-muted">({s.benign_ok}/{s.benign_runs})</span></td>
-                  <td className="tabular py-2.5 text-right">{s.false_block ? pct(s.false_block) : "—"}</td>
-                  <td className="tabular py-2.5 text-right text-muted">{s.setup === "payguard" ? `${s.rules_p50_ms ?? "—"} / ${s.rules_p95_ms ?? "—"} ms` : ""}</td>
+                  <td className="tabular whitespace-nowrap py-2.5 pl-4 text-right">{pct([s.unsafe, s.attack_runs])} <span className="text-muted">({s.unsafe}/{s.attack_runs})</span></td>
+                  <td className="tabular whitespace-nowrap py-2.5 pl-4 text-right">{money(s.paise_at_risk)}</td>
+                  <td className="tabular whitespace-nowrap py-2.5 pl-4 text-right">{pct([s.benign_ok, s.benign_runs])} <span className="text-muted">({s.benign_ok}/{s.benign_runs})</span></td>
+                  <td className="tabular whitespace-nowrap py-2.5 pl-4 text-right">{s.false_block ? pct(s.false_block) : "—"}</td>
+                  <td className="tabular whitespace-nowrap py-2.5 pl-4 text-right text-muted">{s.setup === "payguard" ? `${s.rules_p50_ms ?? "—"} / ${s.rules_p95_ms ?? "—"} ms` : ""}</td>
                 </tr>
               ))}
             </tbody>

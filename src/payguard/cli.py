@@ -114,6 +114,10 @@ def cmd_dashboard(args: argparse.Namespace) -> None:
 
     from payguard.interfaces.api import create_app
 
+    # The eval summary and Doctor code live in the repo (evals/, doctor/), not the installed package;
+    # the console script doesn't put the working directory on the path, so add it.
+    sys.path.insert(0, str(Path.cwd()))
+
     app = create_app(f"sqlite:///{args.db}", Path(args.reports), Path(args.results), Path(args.static))
     print(f"payguard dashboard: http://{args.host}:{args.port}/  (audit db {args.db})", file=sys.stderr)
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")

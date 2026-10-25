@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Clock, X } from "lucide-react";
 import { decide, useJSON, useMode } from "@/lib/api";
-import { label, money, time } from "@/lib/format";
+import { label, money, summariseResult, time } from "@/lib/format";
 import type { Approval } from "@/lib/types";
 import { Empty, PageHeader, RuleTag } from "@/components/ui";
 
@@ -41,7 +41,7 @@ function ApprovalCard({ a, live, onDone }: { a: Approval; live: boolean; onDone:
         <dt className="text-muted">Payment when parked</dt>
         <dd>{a.state ? `${a.state.status} · paid ${money(a.state.amount.minor, currency)} · refunded ${money(a.state.amount_refunded.minor, currency)}` : "—"}</dd>
         <dt className="text-muted">Pinned call</dt><dd><code className="break-all font-mono text-[13px]">{JSON.stringify(a.args)}</code></dd>
-        {a.result && (<><dt className="text-muted">Result</dt><dd><code className="break-all font-mono text-[13px]">{a.result.slice(0, 280)}</code></dd></>)}
+        {a.result && (<><dt className="text-muted">Result</dt><dd className="font-mono text-[13px]" title={a.result}>{summariseResult(a.result)}</dd></>)}
         <dt className="text-muted">Id</dt><dd className="font-mono text-[13px] text-muted">{a.id} · {a.session_id}</dd>
       </dl>
       {pending && (
