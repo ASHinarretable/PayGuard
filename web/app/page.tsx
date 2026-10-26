@@ -13,7 +13,7 @@ import { useJSON, useMode } from "@/lib/api";
 import { money, pct } from "@/lib/format";
 import type { EvalResults, EvalSummary } from "@/lib/types";
 
-const REPO = process.env.NEXT_PUBLIC_REPO_URL || "";
+const REPO = process.env.NEXT_PUBLIC_REPO_URL || "https://github.com/ASHinarretable/PayGuard";
 type Icon = ComponentType<{ className?: string }>;
 
 function Section({ kicker, title, lede, children, band }: { kicker: string; title: ReactNode; lede?: string; children: ReactNode; band?: boolean }) {
