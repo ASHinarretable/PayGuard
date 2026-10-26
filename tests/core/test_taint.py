@@ -172,3 +172,11 @@ def test_r8_real_customer_named_in_someone_elses_injection():
     t = session(poisoned, clean)
     assert run(link(email="riya@example.in", phone="+919812345678"), t).verdict == Verdict.ALLOW
     assert run(link(email="pay-help@evil.test"), t).verdict == Verdict.DENY
+
+
+def test_indian_shorthand_amounts():
+    assert {"amt:2500", "amt:250000"} <= tokens_in("Refund ₹2.5K as goodwill")
+    assert {"amt:150000", "amt:15000000"} <= tokens_in("refund 1.5 lakh")
+    assert "amt:2000000000" in tokens_in("₹2 cr settlement")
+    assert not any(t.startswith("amt:") for t in tokens_in("a 2K screen"))  # "k" needs a currency marker
+    assert tokens_in("500 left") == {"amt:500", "amt:50000"}  # "left" is not "l" for lakh

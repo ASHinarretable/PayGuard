@@ -6,7 +6,9 @@
 export const ID_RE = /\b[a-z]{2,8}_[A-Za-z0-9]{6,}\b/g;
 export const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+/g;
 export const PHONE_RE = /(?<![\w.])\+?\d[\d\s-]{8,14}\d\b/g;
-export const AMOUNT_RE = /(₹|\brs\.?|\binr|\busd|\$)?\s*(?<![\w.])(\d[\d,]*(?:\.\d{1,2})?)(?!\w)/gi;
+export const AMOUNT_RE = /(₹|\brs\.?|\binr|\busd|\$)?\s*(?<![\w.])(\d[\d,]*(?:\.\d{1,2})?)(?:\s?(k|lakhs?|lacs?|l|crores?|cr))?(?!\w)/gi;
+const MULTIPLIERS: Record<string, number> = { k: 1_000, l: 100_000, lakh: 100_000, lakhs: 100_000, lac: 100_000, lacs: 100_000,
+  cr: 10_000_000, crore: 10_000_000, crores: 10_000_000 };
 const MIN_BARE_DIGITS = 3;
 const B64_RE = /(?:b64:)?([A-Za-z0-9+/]{20,}={0,2})/g;
 
@@ -41,6 +43,12 @@ export function tokensIn(text: string): Set<string> {
   rest = rest.replace(PHONE_RE, " ");
   for (const m of rest.matchAll(AMOUNT_RE)) {
     const number = m[2].replaceAll(",", "");
+    const suffix = (m[3] || "").toLowerCase();
+    if (suffix && (suffix !== "k" || m[1])) {
+      const rupees = parseFloat(number) * MULTIPLIERS[suffix];
+      out.add(`amt:${Math.round(rupees)}`); out.add(`amt:${Math.round(rupees * 100)}`);
+      continue;
+    }
     if (!m[1] && number.split(".")[0].length < MIN_BARE_DIGITS) continue;
     if (number.includes(".")) out.add(`amt:${Math.round(parseFloat(number) * 100)}`);
     else { out.add(`amt:${parseInt(number, 10)}`); out.add(`amt:${parseInt(number, 10) * 100}`); }
