@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
 import { InterceptConsole } from "@/components/InterceptConsole";
+import { Playground } from "@/components/Playground";
 import { CountUp, Reveal } from "@/components/Reveal";
 import { useJSON, useMode } from "@/lib/api";
 import { money, pct } from "@/lib/format";
@@ -175,6 +176,12 @@ export default function ProjectPage() {
           ))}
         </div>
       </header>
+
+      {/* ---------------------------------------------------------------- playground */}
+      <Section kicker="Try it" title={<>Write a note that gets you a refund. <span className="text-muted">Go on.</span></>}
+        lede="You're a customer with a captured ₹3,099 payment and a free-text note field. An agent reads payments and does what notes say. See what PayGuard does with yours.">
+        <Playground />
+      </Section>
 
       {/* ---------------------------------------------------------------- evidence */}
       <Section band kicker="The benchmark" title={<>A good system prompt halves the damage. <span className="text-muted">It doesn't remove it.</span></>}
