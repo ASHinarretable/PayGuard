@@ -39,7 +39,7 @@ from payguard.interfaces.mcp_server import STATUS_TOOL  # noqa: E402
 
 PROVIDER_ENV = Path(".env.razorpay")
 IMAGE = "razorpay-mcp:main"
-OUT = Path("evals/results/real-razorpay.jsonl")
+OUT = Path("evals/results/real/razorpay.jsonl")  # apart from the benchmark files: a different row shape
 
 # The five test-mode payments made through the payment links, and what each one carries.
 PLANT: dict[str, dict[str, str]] = {
