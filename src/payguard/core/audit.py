@@ -11,6 +11,7 @@ import secrets
 from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy import inspect, text
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
@@ -37,7 +38,8 @@ class AuditEvent(SQLModel, table=True):
     latency_ms: int = 0
     approval_id: str | None = None
     executed: bool = False  # forwarded upstream and accepted by the provider
-    uncertain: bool = False  # forwarded, but the provider's answer was lost (e.g. a timeout): it may have run
+    uncertain: bool = False
+    shadow: bool = False  # recorded in shadow mode: the verdict is what PayGuard would have done  # forwarded, but the provider's answer was lost (e.g. a timeout): it may have run
     upstream_error: str | None = None
 
 
@@ -59,6 +61,24 @@ def _aware(ts: datetime) -> datetime:
 _seq = itertools.count()
 
 
+def add_missing_columns(engine) -> None:
+    """Brings an older audit database up to date: adds columns newer versions record (all have
+    defaults, so old rows stay valid). create_all only creates missing tables, not columns."""
+    insp = inspect(engine)
+    with engine.begin() as conn:
+        for table in SQLModel.metadata.sorted_tables:
+            if not insp.has_table(table.name):
+                continue
+            have = {c["name"] for c in insp.get_columns(table.name)}
+            for col in table.columns:
+                if col.name in have:
+                    continue
+                default = col.default.arg if col.default is not None and not callable(col.default.arg) else None
+                ddl_type = col.type.compile(dialect=engine.dialect)
+                literal = "" if default is None else f" DEFAULT {int(default) if isinstance(default, bool) else repr(default)}"
+                conn.execute(text(f'ALTER TABLE "{table.name}" ADD COLUMN "{col.name}" {ddl_type}{literal}'))
+
+
 def new_event_id(ts: datetime) -> str:
     # Sorts like the log: milliseconds, then a per-process counter for events in the same millisecond,
     # then randomness so ids from different processes don't collide.
@@ -72,10 +92,11 @@ class AuditLog:
             kwargs = {"connect_args": {"check_same_thread": False}, "poolclass": StaticPool}
         self.engine = create_engine(url, **kwargs)
         SQLModel.metadata.create_all(self.engine)
+        add_missing_columns(self.engine)
 
     def record(self, *, ts: datetime, session_id: str, action: Action, verdict: Verdict, rules: list[str],
                reason: str, latency_ms: int, executed: bool, upstream_error: str | None = None,
-               uncertain: bool = False,
+               uncertain: bool = False, shadow: bool = False,
                approval_id: str | None = None, intent_check: str | None = None,
                intent_ms: int = 0) -> AuditEvent:
         event = AuditEvent(
@@ -87,6 +108,7 @@ class AuditLog:
             rules_fired=json.dumps(rules), reason=reason, intent_check=intent_check, latency_ms=latency_ms,
             intent_ms=intent_ms,
             approval_id=approval_id, executed=executed, upstream_error=upstream_error, uncertain=uncertain,
+            shadow=shadow,
         )
         with Session(self.engine) as s:
             s.add(event)

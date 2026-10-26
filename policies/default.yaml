@@ -1,5 +1,6 @@
 adapter: razorpay        # or stripe
 merchant: demo-fashion
+mode: enforce            # or shadow: judge and record every call, but block nothing
 allow_live: false        # R10: writes are denied when the adapter detects live keys
 limits:                  # per currency, in minor units
   INR: {refund_single_escalate: 500000, refund_daily_cap: 2500000}   # R3 ₹5,000, R4 ₹25,000

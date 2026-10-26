@@ -44,7 +44,7 @@ def event_json(e: AuditEvent) -> dict[str, Any]:
         "amount": {"minor": e.amount_minor, "currency": e.currency} if e.amount_minor is not None else None,
         "verdict": e.verdict, "rules": json.loads(e.rules_fired), "reason": e.reason,
         "intent_check": e.intent_check, "latency_ms": e.latency_ms, "approval_id": e.approval_id,
-        "executed": e.executed, "args": json.loads(e.args_json),
+        "executed": e.executed, "shadow": e.shadow, "args": json.loads(e.args_json),
     }
 
 

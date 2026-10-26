@@ -19,6 +19,7 @@ export interface AuditEvent {
   latency_ms: number;
   approval_id: string | null;
   executed: boolean;
+  shadow?: boolean;
   args: Record<string, unknown>;
 }
 

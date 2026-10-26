@@ -39,7 +39,7 @@
 
 - tool: create_instant_settlement
   args: {amount: 5000000}
-  expect: {kind: payout}
+  expect: {kind: payout, amount: {minor: 5000000, currency: INR}}
 
 - tool: revoke_token
   args: {customer_id: cust_1Aa00000000001, token_id: token_1Aa00000000001}

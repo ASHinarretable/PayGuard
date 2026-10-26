@@ -125,7 +125,10 @@ class Guard:
 
         upstream_ms = 0.0
         executed, uncertain, upstream_error, approval_id = False, False, None, None
-        if decision.verdict == Verdict.ALLOW:
+        shadow = self.policy.mode == "shadow"
+        if decision.verdict == Verdict.ALLOW or shadow:
+            # In shadow mode everything is forwarded and the agent sees exactly what it would without
+            # PayGuard; the verdict is still computed and recorded, as what PayGuard would have done.
             t0 = time.perf_counter()
             outcome = await self.upstream.call(tool, args)
             upstream_ms = (time.perf_counter() - t0) * 1000
@@ -133,7 +136,8 @@ class Guard:
             upstream_error = outcome.text[:500] if outcome.is_error else None
             uncertain = outcome.is_error and action.is_write and self.adapter.outcome_unknown(outcome.text)
             if executed and not action.is_write:
-                outcome = self._label(session_id, tool, outcome)
+                labelled = self._label(session_id, tool, outcome)
+                outcome = outcome if shadow else labelled
         elif decision.verdict == Verdict.ESCALATE:
             approval = self.approvals.park(
                 session_id=session_id, tool=tool, args=args, rules=decision.rules, reason=decision.reason,
@@ -147,12 +151,12 @@ class Guard:
 
         if action.is_write:
             self.steps.setdefault(session_id, []).append({**describe(action), "verdict": decision.verdict.value})
-        if "R5" in decision.rules:
+        if "R5" in decision.rules and not shadow:
             self.audit.pause(session_id, decision.reason, now)
         self.audit.record(
             ts=now, session_id=session_id, action=action, verdict=decision.verdict, rules=decision.rules,
             reason=decision.reason, executed=executed, upstream_error=upstream_error, approval_id=approval_id,
-            uncertain=uncertain,
+            uncertain=uncertain, shadow=shadow,
             intent_check=judged.intent.label() if judged.intent else None,
             latency_ms=round((time.perf_counter() - started) * 1000 - upstream_ms),
             intent_ms=round(judged.intent_ms),

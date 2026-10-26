@@ -71,6 +71,8 @@ def _upstream(args: argparse.Namespace, env: dict[str, str]) -> StdioServerParam
 def cmd_run(args: argparse.Namespace) -> None:
     env = load_env()
     policy = Policy.load(args.policy)
+    if args.shadow:
+        policy = policy.model_copy(update={"mode": "shadow"})
     if policy.adapter != args.adapter:
         sys.exit(f"policy {args.policy} is for adapter {policy.adapter!r}, not {args.adapter!r}")
     session_id = args.session or f"ses_{secrets.token_hex(4)}"
@@ -79,7 +81,7 @@ def cmd_run(args: argparse.Namespace) -> None:
 
     intent = None if args.no_intent else checker_from_env(env)
     print(f"payguard: adapter={args.adapter} upstream={args.upstream} session={session_id} db={args.db} "
-          f"mandate={'yes' if args.mandate else 'none'} intent={intent.model if intent else 'off'}",
+          f"mandate={'yes' if args.mandate else 'none'} intent={intent.model if intent else 'off'} mode={policy.mode}",
           file=sys.stderr)
     anyio.run(lambda: run_stdio_proxy(
         upstream=_upstream(args, env), adapter=args.adapter, policy=policy, db_url=f"sqlite:///{args.db}",
@@ -92,7 +94,8 @@ def cmd_audit(args: argparse.Namespace) -> None:
     for e in AuditLog(f"sqlite:///{args.db}").events(args.session)[-args.limit:]:
         amount = f" {e.currency} {e.amount_minor / 100:,.2f}" if e.amount_minor is not None else ""
         rules = ",".join(json.loads(e.rules_fired))
-        print(f"{e.ts:%Y-%m-%d %H:%M:%S} {e.session_id} {e.verdict:8} {e.tool}{amount}"
+        verdict = f"would {e.verdict.lower()}" if e.shadow and e.verdict != "ALLOW" else e.verdict
+        print(f"{e.ts:%Y-%m-%d %H:%M:%S} {e.session_id} {verdict:14} {e.tool}{amount}"
               f"{f' [{rules}]' if rules else ''}{f'  {e.reason}' if e.reason else ''}")
 
 
@@ -162,6 +165,8 @@ def main() -> None:
     run.add_argument("--session", help="session id (default: random per process)")
     run.add_argument("--mandate", help="the human's task for this session, for R8 and the intent check")
     run.add_argument("--no-intent", action="store_true", help="skip the LLM intent check")
+    run.add_argument("--shadow", action="store_true",
+                     help="judge and record every call but block nothing (try PayGuard on a live agent first)")
     run.set_defaults(func=cmd_run)
 
     approvals = sub.add_parser("approvals", help="list, approve or reject escalated calls")

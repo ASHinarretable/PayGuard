@@ -186,3 +186,25 @@ async def test_retry_after_timeout_is_blocked(data_dir):
     await direct.call("create_refund", args)
     await direct.call("create_refund", args)
     assert [r["paise_moved"] for r in unguarded.ledger_rows()] == [10_000, 10_000]
+
+
+async def test_shadow_mode_forwards_everything_and_records_the_verdict(data_dir):
+    """Shadow mode is for trying PayGuard on a live agent: nothing is blocked or changed, and the
+    audit log says what it would have done."""
+    store = Store(data_dir, MERCHANT)
+    upstream = InProcessUpstream(store)
+    policy = Policy.load("policies/default.yaml").model_copy(update={"mode": "shadow"})
+    audit = AuditLog()
+    guard = Guard(RazorpayAdapter(upstream=upstream), upstream, policy, audit)
+    p = payment(store, max_amount=400_000)
+    big = payment(store, min_amount=500_100)
+    read = await guard.handle(SESSION, "fetch_payment", {"payment_id": p.id})
+    assert "<untrusted" not in read.text  # the agent sees the provider's response as-is
+    over = await guard.handle(SESSION, "create_refund", {"payment_id": p.id, "amount": p.amount + 100})
+    assert over.is_error and "greater than amount captured" in over.text  # the provider's own refusal
+    ok = await guard.handle(SESSION, "create_refund", {"payment_id": big.id, "amount": big.amount})
+    assert not ok.is_error  # would have escalated (R3), went through
+    events = audit.events()
+    assert [(e.verdict, e.shadow) for e in events] == [("ALLOW", True), ("DENY", True), ("ESCALATE", True)]
+    assert events[2].executed and guard.approvals.list() == []
+    assert [r["ok"] for r in store.ledger_rows()] == [0, 1]
