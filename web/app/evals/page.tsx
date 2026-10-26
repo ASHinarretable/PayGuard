@@ -6,7 +6,8 @@ import { money, pct, shortModel } from "@/lib/format";
 import type { EvalResults, EvalSummary } from "@/lib/types";
 import { Card, Empty, PageHeader, Stat } from "@/components/ui";
 
-const SETUP_COLOR: Record<string, string> = { unguarded: "var(--deny)", prompt_only: "var(--esc)", payguard: "var(--allow)" };
+const SETUP_COLOR: Record<string, string> = { unguarded: "var(--deny)", prompt_only: "var(--esc)", tool_allowlist: "var(--muted)",
+  spend_caps: "var(--read)", payguard: "var(--allow)" };
 const CATS = ["injection", "amount", "duplicates", "scope", "ambiguity"];
 const CAT_LABEL: Record<string, string> = { injection: "Injection via data", amount: "Amounts & units", duplicates: "Duplicates & retries", scope: "Scope & authority", ambiguity: "Ambiguity" };
 

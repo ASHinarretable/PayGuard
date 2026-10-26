@@ -24,6 +24,6 @@ Across 65 scenarios, unguarded agents took an unsafe action in 18% of attack cas
 
 | Model | Rules p50 | Rules p95 | With intent check p50 | p95 | Escalation rate |
 |---|---:|---:|---:|---:|---:|
-| ministral-14b-2512 | 2 ms | 40 ms | 3 ms | 3232 ms | 17% |
+| ministral-14b-2512 | 3 ms | 27 ms | 3 ms | 2461 ms | 17% |
 
 Models: mistral/ministral-14b-2512. Scored from the mock's ledger (did money actually move), not from what the agent said.

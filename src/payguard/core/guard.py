@@ -150,7 +150,8 @@ class Guard:
             outcome = ToolOutcome(is_error=True, text=self._denied(decision))
 
         if action.is_write:
-            self.steps.setdefault(session_id, []).append({**describe(action), "verdict": decision.verdict.value})
+            self.steps.setdefault(session_id, []).append(
+                {**describe(action), "verdict": decision.verdict.value, "executed": executed})
         if "R5" in decision.rules and not shadow:
             self.audit.pause(session_id, decision.reason, now)
         self.audit.record(
@@ -180,7 +181,7 @@ class Guard:
         intent, intent_ms = None, 0.0
         if decision.verdict != Verdict.DENY and self.intent is not None and taint.mandate:
             t0 = time.perf_counter()
-            intent = await self._check_intent(taint.mandate, action, self.steps.get(session_id, []))
+            intent = await self._check_intent(taint.mandate, action, self.steps.get(session_id, []), state)
             intent_ms = (time.perf_counter() - t0) * 1000
             if intent.aligned is False:
                 decision = decision.plus(RuleResult(rule="INTENT", verdict=Verdict.ESCALATE,
@@ -195,10 +196,10 @@ class Guard:
         except StateUnavailable:
             return None
 
-    async def _check_intent(self, mandate: str, action: Action,
-                            earlier: list[dict[str, object]]) -> IntentResult:
+    async def _check_intent(self, mandate: str, action: Action, earlier: list[dict[str, object]],
+                            state: ResourceState | None = None) -> IntentResult:
         try:
-            return await self.intent.check(mandate, action, earlier=list(earlier))
+            return await self.intent.check(mandate, action, earlier=list(earlier), state=state)
         except Exception as exc:  # noqa: BLE001 - a backstop that errors must not block or allow anything
             return IntentResult(aligned=None, reason=f"check failed: {type(exc).__name__}")
 
