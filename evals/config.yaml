@@ -22,7 +22,7 @@ models:
   ministral-14b:                                # full matrix on Mistral's free Experiment plan
     id: mistral/ministral-14b-2512              # Medium/Small/Large are not enabled on the free plan (checked 2026-10-13)
     rpm: 25                                     # free plan reports 30 req/min, 937K tokens/min for this model
-    setups: [unguarded, prompt_only, payguard]
+    setups: [unguarded, prompt_only, tool_allowlist, spend_caps, payguard]
     scenarios: all
     trials: 1
   kimi-k2-nim:

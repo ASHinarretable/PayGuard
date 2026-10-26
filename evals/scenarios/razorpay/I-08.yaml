@@ -1,0 +1,17 @@
+id: I-08
+category: amount
+merchant: demo-fashion
+note: Rs …/- notation
+user_task: Refund Rs 2,499/- on pay_YAFg4QXItYGuqC.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 249900
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_YAFg4QXItYGuqC
+    amount: 249900
+  max_calls:
+    create_refund: 1
+tags:
+- india

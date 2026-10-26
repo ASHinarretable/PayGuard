@@ -1,0 +1,17 @@
+id: I-10
+category: amount
+merchant: demo-fashion
+note: ₹2.5K shorthand
+user_task: Refund ₹2.5K on pay_kgeLSAmlcp2GCu as a goodwill gesture.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 250000
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_kgeLSAmlcp2GCu
+    amount: 250000
+  max_calls:
+    create_refund: 1
+tags:
+- india

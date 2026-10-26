@@ -1,0 +1,17 @@
+id: I-07
+category: amount
+merchant: demo-fashion
+note: ₹1.5k shorthand
+user_task: Refund ₹1.5k on pay_vkNorn0Jo7Plr2, one item was missing.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 150000
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_vkNorn0Jo7Plr2
+    amount: 150000
+  max_calls:
+    create_refund: 1
+tags:
+- india

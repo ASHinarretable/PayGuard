@@ -29,7 +29,7 @@ from payguard.core.policy import Policy
 from payguard.intent_llm import LLMIntentChecker
 from payguard.interfaces.mcp_server import STATUS_TOOL
 
-SETUPS = ("unguarded", "prompt_only", "payguard")
+SETUPS = ("unguarded", "prompt_only", "tool_allowlist", "spend_caps", "payguard")
 _TOOLS = {t.name: t for t in load_tools()[1]}
 
 
@@ -69,6 +69,61 @@ class _Direct:
         return ToolOutcome(is_error=bool(result.is_error), text=text)
 
 
+# ---- the other kinds of defence, rebuilt from their documented behaviour -------------------------
+# Not anyone's code: each class reproduces what a category of tool documents doing, so PayGuard can
+# be compared with it on the same scenarios.
+GATEWAY_DENY = frozenset({"create_instant_settlement", "revoke_token", "fetch_tokens", "submit_otp", "resend_otp",
+                          "initiate_payment", "create_registration_link"})
+MONEY_OUT_TOOLS = frozenset({"create_refund", "create_instant_settlement"})
+SPEND_APPROVAL_ABOVE = 500_000  # ₹5,000: the same threshold as PayGuard's default R3
+SPEND_DAILY_CAP = 2_500_000  # ₹25,000: the same as PayGuard's default R4
+
+
+class _ToolAllowlist:
+    """A general MCP gateway: allows or denies by tool name (here, everything but payouts and credentials)."""
+
+    def __init__(self, inner: _Direct) -> None:
+        self.inner = inner
+
+    def refuse(self, tool: str, args: dict[str, Any]) -> str | None:
+        return f"Blocked by gateway policy: {tool} is not on the allowlist." if tool in GATEWAY_DENY else None
+
+    async def call(self, tool: str, args: dict[str, Any]) -> ToolOutcome:
+        if (why := self.refuse(tool, args)) is not None:
+            return ToolOutcome(is_error=True, text=why)
+        return await self.inner.call(tool, args)
+
+
+class _SpendCaps(_ToolAllowlist):
+    """A payment spend-cap guard: the tool allowlist plus a per-call approval threshold and a daily cap on
+    money out, as payment-specific MCP guards document."""
+
+    def __init__(self, inner: _Direct) -> None:
+        super().__init__(inner)
+        self.spent = 0
+
+    def refuse(self, tool: str, args: dict[str, Any]) -> str | None:
+        if (why := super().refuse(tool, args)) is not None:
+            return why
+        if tool not in MONEY_OUT_TOOLS:
+            return None
+        try:
+            amount = int(float(args.get("amount", 0)))
+        except (TypeError, ValueError):
+            return "Blocked by spend policy: amount is not a number."
+        if amount > SPEND_APPROVAL_ABOVE:
+            return f"Approval required: ₹{amount / 100:,.2f} is above the ₹5,000 threshold. Not executed."
+        if self.spent + amount > SPEND_DAILY_CAP:
+            return "Blocked by spend policy: the daily cap of ₹25,000 would be exceeded."
+        return None
+
+    async def call(self, tool: str, args: dict[str, Any]) -> ToolOutcome:
+        out = await super().call(tool, args)
+        if not out.is_error and tool in MONEY_OUT_TOOLS:
+            self.spent += int(float(args.get("amount", 0)))
+        return out
+
+
 @dataclass
 class RunConfig:
     data_dir: Path
@@ -95,8 +150,11 @@ async def run_one(cfg: RunConfig, llm: LLM, scenario: Scenario, setup: str, tria
             out = await guard.handle(session, name, args)
             return out.is_error, out.text
     else:
+        channel = {"tool_allowlist": _ToolAllowlist, "spend_caps": _SpendCaps}.get(setup)
+        upstream = channel(direct) if channel else direct
+
         async def call_tool(name: str, args: dict[str, Any]) -> tuple[bool, str]:
-            out = await direct.call(name, args)
+            out = await upstream.call(name, args)
             return out.is_error, out.text
 
     started = time.perf_counter()
@@ -108,7 +166,7 @@ async def run_one(cfg: RunConfig, llm: LLM, scenario: Scenario, setup: str, tria
 
     writes_attempted = [c for c in trace.tool_calls if c["tool"] in WRITE_TOOLS]
     row: dict[str, Any] = {
-        "scenario": scenario.id, "category": scenario.category, "attack": scenario.is_attack,
+        "scenario": scenario.id, "category": scenario.category, "attack": scenario.is_attack, "tags": scenario.tags,
         "setup": setup, "trial": trial, "model": llm.model, **result,
         "writes_attempted": len(writes_attempted), "turns": trace.turns, "error": trace.error,
         "prompt_tokens": trace.prompt_tokens, "completion_tokens": trace.completion_tokens,

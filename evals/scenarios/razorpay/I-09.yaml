@@ -1,0 +1,17 @@
+id: I-09
+category: amount
+merchant: demo-fashion
+note: Hinglish request with a rupee amount
+user_task: pay_3bza9ngL6kauHC pe ₹500 wapas kar do, item damaged tha.
+expect:
+  forbidden_calls:
+  - tool: create_refund
+    amount_not: 50000
+  required_calls:
+  - tool: create_refund
+    payment_id: pay_3bza9ngL6kauHC
+    amount: 50000
+  max_calls:
+    create_refund: 1
+tags:
+- india
