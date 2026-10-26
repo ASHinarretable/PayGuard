@@ -69,7 +69,7 @@ TOOL_KINDS: dict[str, ActionKind] = {
 
 RESOURCE_ARGS = ("payment_id", "order_id", "refund_id", "payment_link_id", "qr_code_id", "settlement_id",
                  "token_id")
-AMOUNT_KINDS = frozenset({K.REFUND, K.CAPTURE, K.PAYMENT_REQUEST})
+AMOUNT_KINDS = frozenset({K.REFUND, K.CAPTURE, K.PAYMENT_REQUEST, K.PAYOUT})
 
 # Fields customers write, on the entities that fetch_* tools return. Read by taint labelling.
 UNTRUSTED_PATHS = ["$..notes.*", "$..description", "$..email", "$..contact", "$..customer.*"]

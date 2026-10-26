@@ -9,12 +9,14 @@ const VERDICT_STYLE: Record<string, string> = {
 };
 const VERDICT_TEXT: Record<string, string> = { ALLOW: "Allowed", DENY: "Denied", ESCALATE: "Escalated", READ: "Read" };
 
-export function VerdictChip({ verdict, read }: { verdict: Verdict | "READ"; read?: boolean }) {
+export function VerdictChip({ verdict, read, shadow }: { verdict: Verdict | "READ"; read?: boolean; shadow?: boolean }) {
   const v = read && verdict === "ALLOW" ? "READ" : verdict;
+  const would = shadow && (v === "DENY" || v === "ESCALATE");
   return (
-    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${VERDICT_STYLE[v]}`}>
+    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${VERDICT_STYLE[v]} ${would ? "border border-dashed border-current bg-transparent" : ""}`}
+      title={would ? "Shadow mode: the call went through; this is what PayGuard would have done" : undefined}>
       <span className="size-1.5 rounded-full bg-current" aria-hidden />
-      {VERDICT_TEXT[v]}
+      {would ? `Would ${v === "DENY" ? "deny" : "escalate"}` : VERDICT_TEXT[v]}
     </span>
   );
 }

@@ -4,9 +4,34 @@
     {
       "name": "dashboard",
       "runtimeExecutable": "C:\\Users\\Atharva Pawar\\.local\\bin\\uv.exe",
-      "runtimeArgs": ["run", "--directory", "C:\\Users\\Atharva Pawar\\OneDrive\\Desktop\\2025 Tech\\Projectss4me\\PayGuard",
-                      "payguard", "dashboard", "--db", "reports/demo.payguard.db", "--port", "8787"],
+      "runtimeArgs": [
+        "run",
+        "--directory",
+        "C:\\Users\\Atharva Pawar\\OneDrive\\Desktop\\2025 Tech\\Projectss4me\\PayGuard",
+        "payguard",
+        "dashboard",
+        "--db",
+        "reports/demo.payguard.db",
+        "--port",
+        "8787"
+      ],
       "port": 8787
+    },
+    {
+      "name": "dashboard-shadow",
+      "runtimeExecutable": "C:\\Users\\Atharva Pawar\\.local\\bin\\uv.exe",
+      "runtimeArgs": [
+        "run",
+        "--directory",
+        "C:\\Users\\Atharva Pawar\\OneDrive\\Desktop\\2025 Tech\\Projectss4me\\PayGuard",
+        "payguard",
+        "dashboard",
+        "--db",
+        "reports/shadow-demo.payguard.db",
+        "--port",
+        "8788"
+      ],
+      "port": 8788
     }
   ]
 }

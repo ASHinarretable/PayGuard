@@ -53,7 +53,9 @@ export default function FeedPage() {
 
   const writes = events.filter((e) => e.kind !== "read");
   const count = (v: string) => writes.filter((e) => e.verdict === v).length;
-  const blockedMoney = writes.filter((e) => e.verdict !== "ALLOW" && e.amount).reduce((s, e) => s + (e.amount?.minor ?? 0), 0);
+  const blockedMoney = writes.filter((e) => e.verdict !== "ALLOW" && !e.shadow && e.amount).reduce((s, e) => s + (e.amount?.minor ?? 0), 0);
+  const shadowWrites = writes.filter((e) => e.shadow && e.verdict !== "ALLOW");
+  const wouldStop = shadowWrites.filter((e) => e.executed && e.amount).reduce((s, e) => s + (e.amount?.minor ?? 0), 0);
   const shown = useMemo(() => events
     .filter((e) => filter === "all" || (filter === "writes" ? e.kind !== "read" : e.verdict !== "ALLOW"))
     .slice().reverse().slice(0, 400), [events, filter]);
@@ -72,11 +74,23 @@ export default function FeedPage() {
         </div>
       </PageHeader>
 
+      {shadowWrites.length > 0 && (
+        <div className="mb-6 rounded-xl border border-dashed border-esc/60 bg-esc-soft/50 px-5 py-4">
+          <div className="text-sm font-semibold text-esc">Shadow mode: nothing was blocked</div>
+          <div className="mt-1 text-[15px]">
+            PayGuard would have stopped <strong>{shadowWrites.length}</strong> call{shadowWrites.length === 1 ? "" : "s"}
+            {wouldStop > 0 && <> that moved <strong className="tabular">{money(wouldStop)}</strong></>}. Switch to enforce mode to block them.
+          </div>
+        </div>
+      )}
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Tool calls" value={events.length} sub={`${writes.length} writes`} />
         <Stat label="Allowed writes" value={count("ALLOW")} tone="good" />
-        <Stat label="Escalated to a human" value={count("ESCALATE")} sub="parked with pinned args" />
-        <Stat label="Denied" value={count("DENY")} sub={blockedMoney ? `${money(blockedMoney)} stopped` : undefined} tone={count("DENY") ? "bad" : undefined} />
+        <Stat label={shadowWrites.length ? "Would escalate" : "Escalated to a human"} value={count("ESCALATE")}
+          sub={shadowWrites.length ? "shadow mode: went through" : "parked with pinned args"} />
+        <Stat label={shadowWrites.length ? "Would deny" : "Denied"} value={count("DENY")}
+          sub={blockedMoney ? `${money(blockedMoney)} stopped` : shadowWrites.length ? "shadow mode: went through" : undefined}
+          tone={count("DENY") ? "bad" : undefined} />
       </div>
 
       {loaded && !events.length ? (
@@ -93,7 +107,7 @@ export default function FeedPage() {
                   <time className="font-mono text-xs text-muted" title={`${e.ts} · ${e.session_id}`}>{time(e.ts)}</time>
                   <span className="truncate font-mono text-[13px]" title={e.resource_id ?? ""}>{e.tool}</span>
                   <span className="tabular hidden text-right text-sm md:block">{e.amount ? money(e.amount.minor, e.amount.currency) : ""}</span>
-                  <span className="justify-self-end md:justify-self-start"><VerdictChip verdict={e.verdict} read={!write} /></span>
+                  <span className="justify-self-end md:justify-self-start"><VerdictChip verdict={e.verdict} read={!write} shadow={e.shadow} /></span>
                   <span className="col-span-3 flex min-w-0 items-center gap-2 md:col-span-1">
                     {e.rules.map((r) => <RuleTag key={r} rule={r} />)}
                     <span className={`min-w-0 text-[13px] text-muted ${open === e.id ? "whitespace-normal" : "truncate"}`}>{why}</span>

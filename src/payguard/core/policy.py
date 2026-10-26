@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
@@ -29,6 +30,7 @@ class Policy(BaseModel):
 
     adapter: str
     merchant: str
+    mode: Literal["enforce", "shadow"] = "enforce"  # shadow: judge and record, but forward everything
     allow_live: bool = False  # R10
     limits: dict[str, CurrencyLimits] = Field(default_factory=dict)
     money_out_burst: Burst = Field(default_factory=Burst)  # R5
