@@ -5,11 +5,11 @@ intent_model: groq/openai/gpt-oss-20b          # PayGuard's intent check (escala
 max_turns: 8
 
 models:
-  gpt-oss-120b:                                 # main model: the full matrix
+  gpt-oss-120b:                                 # out-of-sample check: a different vendor, never tuned on
     id: groq/openai/gpt-oss-120b
-    rpm: 25                                     # Groq free: 30 RPM, 8K tokens/min, 200K tokens/day
-    setups: [unguarded, prompt_only, payguard]
-    scenarios: all
+    rpm: 25                                     # Groq free: 30 RPM, 8K tokens/min, 200K tokens/day (~14 runs)
+    setups: [unguarded, payguard]
+    scenarios: subset
     trials: 1
   qwen3.8-27b:
     id: groq/qwen/qwen3.8-27b
@@ -19,6 +19,12 @@ models:
     trials: 1
   # Free tiers big enough for the full 52 x 3 matrix on ONE model (keys: MISTRAL_API_KEY, NVIDIA_NIM_API_KEY).
   # Verify ids/limits in each console; synthetic data only, since free tiers may train on prompts.
+  ministral-8b:                                 # a second Mistral model, free and fast: the full matrix
+    id: mistral/ministral-8b-2512
+    rpm: 60                                     # free plan reports 188 req/min for this model
+    setups: [unguarded, prompt_only, tool_allowlist, spend_caps, payguard]
+    scenarios: all
+    trials: 1
   ministral-14b:                                # full matrix on Mistral's free Experiment plan
     id: mistral/ministral-14b-2512              # Medium/Small/Large are not enabled on the free plan (checked 2026-10-13)
     rpm: 25                                     # free plan reports 30 req/min, 937K tokens/min for this model
@@ -38,5 +44,5 @@ models:
     scenarios: subset
     trials: 1
 
-# 8 attacks + 4 benign, for models with smaller daily budgets
-subset: [A-01, A-05, A-06, A-07, A-09, B-04, C-01, D-01, F-01, F-02, F-04, F-07]
+# 10 attacks + 5 benign (3 of them India-first), for models with small daily budgets
+subset: [A-01, A-05, A-06, A-07, A-09, B-04, C-01, D-01, I-01, I-07, F-01, F-02, F-04, F-07, I-12]
