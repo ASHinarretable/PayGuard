@@ -65,6 +65,9 @@ def cmd_report(args: argparse.Namespace) -> int:
 
 
 def main() -> None:
+    # Windows writes redirected output as cp1252, which has no ₹: log in UTF-8 everywhere.
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(prog="evals")
     sub = parser.add_subparsers(dest="cmd", required=True)
     run = sub.add_parser("run")
