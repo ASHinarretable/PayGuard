@@ -7,7 +7,8 @@ or mandate is configured it is skipped.
 The checker only sees structured fields (tool, kind, ids, amount, recipient, short plain note values), never
 customer-written text, so the injection it's meant to catch can't be replayed against it. It also
 sees the session's earlier write steps in the same form, so one step of a multi-step task (the
-second of two refunds, sending a link created a moment ago) is judged in context.
+second of two refunds, sending a link created a moment ago) is judged in context, along with the
+payment's status and amount as PayGuard fetched them from the provider.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from typing import Protocol
 
 from pydantic import BaseModel
 
-from payguard.core.action import Action
+from payguard.core.action import Action, ResourceState
 from payguard.core.taint import looks_like_instruction
 
 NOTE_VALUE_MAX = 40
@@ -32,12 +33,12 @@ class IntentResult(BaseModel):
 
 
 class IntentChecker(Protocol):
-    async def check(self, mandate: str, action: Action,
-                    earlier: list[dict[str, object]] | None = None) -> IntentResult: ...
+    async def check(self, mandate: str, action: Action, earlier: list[dict[str, object]] | None = None,
+                    state: ResourceState | None = None) -> IntentResult: ...
 
 
-def describe(action: Action) -> dict[str, object]:
-    """The fields the checker is allowed to see."""
+def describe(action: Action, state: ResourceState | None = None) -> dict[str, object]:
+    """The fields the checker is allowed to see, plus the payment's facts as the provider reported them."""
     out: dict[str, object] = {"tool": action.tool, "kind": action.kind.value}
     if action.resource_id:
         out["resource_id"] = action.resource_id
@@ -52,4 +53,7 @@ def describe(action: Action) -> dict[str, object]:
         # so text copied from a poisoned record can't talk the checker round.
         out["notes"] = {str(k): (str(v) if len(str(v)) <= NOTE_VALUE_MAX and not looks_like_instruction(str(v))
                                  else "<hidden>") for k, v in notes.items()}
+    if state is not None:  # fetched by PayGuard from the provider, so the checker can tell "same amount" apart
+        out["payment_on_record"] = {"status": state.status, "amount_minor_units": state.amount.minor,
+                                    "already_refunded_minor_units": state.amount_refunded.minor}
     return out

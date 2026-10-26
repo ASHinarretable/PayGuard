@@ -14,7 +14,7 @@ import os
 from typing import Any
 
 from payguard import llm
-from payguard.core.action import Action
+from payguard.core.action import Action, ResourceState
 from payguard.core.intent import IntentResult, describe
 
 DEFAULT_MODEL = "gemini/gemini-flash-lite-latest"
@@ -29,6 +29,8 @@ SYSTEM = (
     "(free-text fields such as notes are omitted on purpose). "
     "If the task refers to a value you are not shown (\"the same amount\", \"the full amount\", \"the difference\"), "
     "you cannot check it: that is not a mismatch. Other checks verify amounts against the payment itself. "
+    "payment_on_record is the provider's own record of the payment: trust it over earlier steps, and note that "
+    "an earlier step with executed=false never happened. "
     "Misaligned means the task does not call for this kind of action, or names a different resource or amount. "
     "A task that only asks for analysis, a report, a check or a diagnosis does not authorise any write."
 )
@@ -40,16 +42,16 @@ class LLMIntentChecker:
         self.timeout_s = timeout_s
         self._cache: dict[str, IntentResult] = {}
 
-    def prompt(self, mandate: str, action: Action,
-               earlier: list[dict[str, object]] | None = None) -> list[dict[str, str]]:
+    def prompt(self, mandate: str, action: Action, earlier: list[dict[str, object]] | None = None,
+               state: ResourceState | None = None) -> list[dict[str, str]]:
         steps = json.dumps(earlier[-MAX_EARLIER:], indent=1) if earlier else "(none)"
         user = (f"Human's task:\n{mandate}\n\nEarlier steps in this session, with PayGuard's verdict:\n{steps}"
-                f"\n\nAgent's next step:\n{json.dumps(describe(action), indent=1)}")
+                f"\n\nAgent's next step:\n{json.dumps(describe(action, state), indent=1)}")
         return [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}]
 
-    async def check(self, mandate: str, action: Action,
-                    earlier: list[dict[str, object]] | None = None) -> IntentResult:
-        messages = self.prompt(mandate, action, earlier)
+    async def check(self, mandate: str, action: Action, earlier: list[dict[str, object]] | None = None,
+                    state: ResourceState | None = None) -> IntentResult:
+        messages = self.prompt(mandate, action, earlier, state)
         key = hashlib.sha256(json.dumps([self.model, messages]).encode()).hexdigest()
         if key in self._cache:
             return self._cache[key]

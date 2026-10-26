@@ -36,7 +36,7 @@ class FakeIntent:
     def __init__(self, aligned: bool | None, error: bool = False) -> None:
         self.aligned, self.error, self.calls = aligned, error, 0
 
-    async def check(self, mandate: str, action: Action, earlier=None) -> IntentResult:
+    async def check(self, mandate: str, action: Action, earlier=None, state=None) -> IntentResult:
         self.calls += 1
         self.earlier = earlier
         if self.error:
@@ -246,7 +246,7 @@ async def test_intent_check_sees_earlier_steps(data_dir):
     await guard.handle(S, "create_refund", {"payment_id": p2.id, "amount": 10_000})
     assert intent.calls == 2
     assert intent.earlier == [{"tool": "create_refund", "kind": "refund", "resource_id": p1.id,
-                               "amount_minor_units": 10_000, "currency": "INR", "verdict": "ALLOW"}]
+                               "amount_minor_units": 10_000, "currency": "INR", "verdict": "ALLOW", "executed": True}]
 
 
 def test_checker_sees_plain_note_values_but_not_instructions():
