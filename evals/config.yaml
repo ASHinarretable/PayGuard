@@ -37,6 +37,26 @@ models:
     setups: [unguarded, prompt_only, payguard]
     scenarios: all
     trials: 1
+  # OpenRouter free models: 50 requests/day without credits, so a subset run takes a few days.
+  nemotron-super:
+    id: openrouter/nvidia/nemotron-3-super-120b-a12b:free
+    rpm: 15
+    setups: [unguarded, payguard]
+    scenarios: subset
+    trials: 1
+  gemma-4-31b:
+    id: openrouter/google/gemma-4-31b-it:free
+    rpm: 15
+    setups: [unguarded, payguard]
+    scenarios: subset
+    trials: 1
+  # Cloudflare Workers AI: 10,000 neurons/day free (keys: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID).
+  llama-4-scout:
+    id: cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct
+    rpm: 30
+    setups: [unguarded, payguard]
+    scenarios: subset
+    trials: 1
   gemini-flash:
     id: gemini/gemini-3.8-flash
     rpm: 5

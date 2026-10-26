@@ -65,4 +65,29 @@ def test_missing_key_and_unknown_provider(monkeypatch):
     monkeypatch.setenv("GROQ_API_KEY", "xxx")
     assert not llm.has_key("groq/openai/gpt-oss-20b")  # the .env.example placeholder doesn't count
     with pytest.raises(llm.LLMError, match="unknown model provider"):
-        llm.resolve("openrouter/some-model")
+        llm.resolve("nope/some-model")
+
+
+def test_cloudflare_url_takes_the_account_id(monkeypatch):
+    monkeypatch.setenv("CLOUDFLARE_API_TOKEN", "cf")
+    monkeypatch.delenv("CLOUDFLARE_ACCOUNT_ID", raising=False)
+    model = "cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct"
+    assert not llm.has_key(model)
+    with pytest.raises(llm.LLMError, match="CLOUDFLARE_ACCOUNT_ID"):
+        llm.resolve(model)
+    monkeypatch.setenv("CLOUDFLARE_ACCOUNT_ID", "abc123")
+    assert llm.has_key(model)
+    assert llm.resolve(model) == ("https://api.cloudflare.com/client/v4/accounts/abc123/ai/v1",
+                                  "@cf/meta/llama-4-scout-17b-16e-instruct", "cf")
+
+
+async def test_openrouter_free_model_keeps_its_suffix(monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "or")
+    seen = {}
+
+    def handler(request):
+        seen["url"], seen["model"] = str(request.url), json.loads(request.content)["model"]
+        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+
+    await llm.chat("openrouter/google/gemma-4-31b-it:free", [], client=client(handler))
+    assert seen == {"url": "https://openrouter.ai/api/v1/chat/completions", "model": "google/gemma-4-31b-it:free"}

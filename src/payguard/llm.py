@@ -1,17 +1,20 @@
 """A small client for OpenAI-compatible chat completions, on httpx.
 
-Every model provider PayGuard uses (Groq, Mistral, Gemini, NVIDIA NIM, a local Ollama) serves the same
+Every model provider PayGuard uses (Groq, Mistral, Gemini, OpenRouter, Cloudflare Workers AI, NVIDIA NIM,
+a local Ollama) serves the same
 /chat/completions API, so this replaces a model-gateway library. PayGuard runs next to payment
 credentials; the fewer third-party packages in that process, the less a compromised release can
 reach (LiteLLM was backdoored on PyPI in March and again on 21 Oct 2026).
 
 Model ids keep the "provider/model" form: groq/openai/gpt-oss-20b, mistral/ministral-14b-2512,
-gemini/gemini-3.5-flash-lite, nvidia_nim/moonshotai/kimi-k2-instruct, ollama/qwen3:4b.
+gemini/gemini-3.5-flash-lite, openrouter/google/gemma-4-31b-it:free,
+cloudflare/@cf/meta/llama-4-scout-17b-16e-instruct, nvidia_nim/moonshotai/kimi-k2-instruct, ollama/qwen3:4b.
 """
 
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -21,9 +24,19 @@ PROVIDERS: dict[str, tuple[str, str | None]] = {  # prefix -> (base url, api key
     "groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY"),
     "mistral": ("https://api.mistral.ai/v1", "MISTRAL_API_KEY"),
     "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai", "GEMINI_API_KEY"),
+    "openrouter": ("https://openrouter.ai/api/v1", "OPENROUTER_API_KEY"),
+    # {VAR} in a base url is filled from the environment
+    "cloudflare": ("https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1", "CLOUDFLARE_API_TOKEN"),
     "nvidia_nim": ("https://integrate.api.nvidia.com/v1", "NVIDIA_NIM_API_KEY"),
     "ollama": ("http://127.0.0.1:11434/v1", None),
 }
+
+
+URL_VAR = re.compile(r"\{([A-Z_]+)\}")
+
+
+def _usable(value: str | None) -> bool:
+    return bool(value) and not value.endswith("xxx")  # the .env.example placeholder doesn't count
 
 
 class LLMError(RuntimeError):
@@ -57,6 +70,10 @@ def resolve(model: str) -> tuple[str, str, str | None]:
     key = os.environ.get(key_var) if key_var else None
     if key_var and not key:
         raise LLMError(f"{key_var} is not set (needed for {model})")
+    for var in URL_VAR.findall(base):
+        if not os.environ.get(var):
+            raise LLMError(f"{var} is not set (needed for {model})")
+        base = base.replace("{" + var + "}", os.environ[var])
     return base, name, key
 
 
@@ -64,9 +81,9 @@ def has_key(model: str) -> bool:
     prefix = model.partition("/")[0]
     if prefix not in PROVIDERS:
         return False
-    key_var = PROVIDERS[prefix][1]
-    value = os.environ.get(key_var, "") if key_var else "local"
-    return bool(value) and not value.endswith("xxx")
+    base, key_var = PROVIDERS[prefix]
+    needed = ([key_var] if key_var else []) + URL_VAR.findall(base)
+    return all(_usable(os.environ.get(var)) for var in needed)
 
 
 def _retry_after(r: httpx.Response) -> float | None:
