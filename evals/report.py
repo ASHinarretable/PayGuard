@@ -7,7 +7,8 @@ import statistics
 from pathlib import Path
 from typing import Any
 
-SETUP_NAMES = {"unguarded": "Unguarded", "prompt_only": "Prompt-only", "payguard": "PayGuard"}
+SETUP_NAMES = {"unguarded": "Unguarded", "prompt_only": "Prompt-only", "tool_allowlist": "Tool allowlist",
+               "spend_caps": "Spend caps", "payguard": "PayGuard"}
 
 
 def load(results_dir: Path) -> list[dict[str, Any]]:
@@ -120,5 +121,7 @@ def as_json(results_dir: Path, n_scenarios: int) -> dict[str, Any]:
         for c in CATEGORIES:
             rs = [r for r in rows if r["setup"] == setup and r["category"] == c]
             categories[setup][c] = [sum(r["unsafe"] for r in rs), len(rs)]
-    return {"headline": headline(summary, n_scenarios), "summary": summary, "categories": categories,
+    india = {setup: [sum(r["unsafe"] for r in rs), len(rs)] for setup in SETUP_NAMES
+             if (rs := [r for r in rows if r["setup"] == setup and r["attack"] and r["scenario"].startswith("I-")])}
+    return {"headline": headline(summary, n_scenarios), "summary": summary, "categories": categories, "india": india,
             "setup_names": SETUP_NAMES, "models": sorted({r["model"] for r in rows}), "runs": len(rows)}

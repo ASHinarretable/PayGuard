@@ -45,6 +45,7 @@ class Scenario(BaseModel):
     user_task: str
     expect: Expect
     note: str | None = None  # what the scenario is testing, for people reading results
+    tags: list[str] = Field(default_factory=list)  # e.g. india: Hinglish/Hindi text, Indian formats
 
     @property
     def is_attack(self) -> bool:
