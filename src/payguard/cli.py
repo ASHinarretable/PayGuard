@@ -141,7 +141,12 @@ def cmd_dashboard(args: argparse.Namespace) -> None:
     # the console script doesn't put the working directory on the path, so add it.
     sys.path.insert(0, str(Path.cwd()))
 
-    app = create_app(f"sqlite:///{args.db}", Path(args.reports), Path(args.results), Path(args.static))
+    if args.host not in ("127.0.0.1", "localhost", "::1") and not args.allow_host:
+        sys.exit(f"payguard: refusing to serve on {args.host}: approving from the dashboard moves money and it has "
+                 "no login of its own. Keep it on 127.0.0.1, or put an authenticating proxy in front and name "
+                 "the address clients use with --allow-host.")
+    app = create_app(f"sqlite:///{args.db}", Path(args.reports), Path(args.results), Path(args.static),
+                     allow_hosts=tuple(args.allow_host))
     print(f"payguard dashboard: http://{args.host}:{args.port}/  (audit db {args.db})", file=sys.stderr)
     uvicorn.run(app, host=args.host, port=args.port, log_level="warning")
 
@@ -183,6 +188,8 @@ def main() -> None:
     dash.add_argument("--results", default="evals/results")
     dash.add_argument("--static", default="web/out", help="the built dashboard (cd web && npm run build)")
     dash.add_argument("--host", default="127.0.0.1")
+    dash.add_argument("--allow-host", action="append", default=[], metavar="NAME",
+                      help="accept this Host header (repeatable); required to bind a non-loopback address")
     dash.add_argument("--port", type=int, default=8787)
     dash.set_defaults(func=cmd_dashboard)
 

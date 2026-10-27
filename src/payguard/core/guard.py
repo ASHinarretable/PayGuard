@@ -242,7 +242,11 @@ class Guard:
         if not approval.pinned_ok():
             self.approvals.finish(approval.id, FAILED, "stored arguments no longer match their hash")
             return approval
-        action = self.adapter.classify(approval.tool, approval.args)
+        try:
+            action = self.adapter.classify(approval.tool, approval.args)
+        except ClassificationError as exc:
+            self.approvals.finish(approval.id, FAILED, f"stored arguments are no longer valid: {exc}")
+            return approval
         ctx = Context(action=action, policy=self.policy, history=self.audit, now=now,
                       session_id=approval.session_id, state=await self._state(action),
                       is_live=self.adapter.is_live())

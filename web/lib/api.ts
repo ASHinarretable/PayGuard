@@ -48,7 +48,7 @@ export async function getJSON<T>(path: string): Promise<T> {
 }
 
 export async function decide(id: string, action: "approve" | "reject"): Promise<void> {
-  const r = await fetch(`${API}/api/approvals/${encodeURIComponent(id)}/${action}`, { method: "POST" });
+  const r = await fetch(`${API}/api/approvals/${encodeURIComponent(id)}/${action}`, { method: "POST", headers: { "X-PayGuard-CSRF": "1" } });
   if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
 }
 

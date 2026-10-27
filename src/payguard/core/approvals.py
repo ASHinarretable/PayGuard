@@ -73,7 +73,7 @@ class ApprovalQueue:
             if existing is not None:
                 return existing
             approval = Approval(
-                id=f"apr_{secrets.token_hex(4)}", session_id=session_id, created_at=now,
+                id=f"apr_{secrets.token_hex(16)}", session_id=session_id, created_at=now,
                 expires_at=now + timedelta(minutes=ttl_min), tool=tool,
                 args_json=json.dumps(args, sort_keys=True, default=str), args_sha256=digest,
                 rules_fired=json.dumps(rules), reason=reason, intent_check=intent_check,

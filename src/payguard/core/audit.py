@@ -16,6 +16,7 @@ from sqlalchemy.pool import StaticPool
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from payguard.core.action import Action, ActionKind, Money
+from payguard.core.redact import redact
 from payguard.core.rules import PastAction, Verdict
 
 
@@ -104,7 +105,7 @@ class AuditLog:
             tool=action.tool, kind=action.kind.value, resource_id=action.resource_id,
             amount_minor=action.amount.minor if action.amount else None,
             currency=action.amount.currency if action.amount else None,
-            args_json=json.dumps(action.raw_args, sort_keys=True, default=str), verdict=verdict.value,
+            args_json=json.dumps(redact(action.raw_args), sort_keys=True, default=str), verdict=verdict.value,
             rules_fired=json.dumps(rules), reason=reason, intent_check=intent_check, latency_ms=latency_ms,
             intent_ms=intent_ms,
             approval_id=approval_id, executed=executed, upstream_error=upstream_error, uncertain=uncertain,
@@ -116,11 +117,13 @@ class AuditLog:
             s.refresh(event)
         return event
 
-    def events(self, session_id: str | None = None) -> list[AuditEvent]:
+    def events(self, session_id: str | None = None, after: str | None = None) -> list[AuditEvent]:
         with Session(self.engine) as s:
             q = select(AuditEvent).order_by(AuditEvent.ts, AuditEvent.id)
             if session_id is not None:
                 q = q.where(AuditEvent.session_id == session_id)
+            if after is not None:
+                q = q.where(AuditEvent.id > after)
             return list(s.exec(q))
 
     # ---- History, for R4/R5/R6 -----------------------------------------------------------

@@ -1,5 +1,6 @@
 """Dashboard API: audit feed, approvals (deciding from the dashboard), reports, evals."""
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -33,7 +34,8 @@ async def setup(data_dir, tmp_path):
     reports.mkdir()
     (reports / "demo-x.json").write_text('{"merchant": "demo-x"}', encoding="utf-8")
     app = create_app(f"sqlite:///{db}", reports, Path("evals/results"), Path("web/out"))
-    return TestClient(app), guard, store
+    client = TestClient(app, base_url="http://127.0.0.1:8787", headers={"X-PayGuard-CSRF": "1"})
+    return client, guard, store
 
 
 async def test_events_feed(setup):
@@ -74,6 +76,57 @@ async def test_reports_and_static(setup):
 
 def test_evals_endpoint_shape():
     app = create_app("sqlite://", Path("reports"), Path("evals/results"), Path("web/out"))
-    d = TestClient(app).get("/api/evals").json()
+    d = TestClient(app, base_url="http://127.0.0.1:8787").get("/api/evals").json()
     assert {"headline", "summary", "categories", "setup_names", "runs"} <= set(d)
     assert datetime.now(UTC)  # keeps the import honest
+
+
+# ---- the API defends itself against other pages in the same browser -------------------------------
+
+async def test_wrong_host_is_refused_dns_rebinding(setup):
+    client, _, _ = setup
+    assert client.get("/api/approvals", headers={"Host": "evil.example"}).status_code == 421
+    assert client.get("/api/approvals", headers={"Host": "localhost:8787"}).status_code == 200
+    assert client.get("/api/approvals", headers={"Host": "[::1]:8787"}).status_code == 200
+
+
+async def test_writes_need_the_csrf_header_and_a_same_origin(setup):
+    client, _, _ = setup
+    [pending] = [a for a in client.get("/api/approvals").json() if a["status"] == "pending"]
+    url = f"/api/approvals/{pending['id']}/approve"
+    # what a malicious page can send: a simple cross-origin POST, with no way to add the custom header
+    assert client.post(url, headers={"X-PayGuard-CSRF": "", "Origin": "https://evil.example"}).status_code == 403
+    assert client.post(url, headers={"Origin": "https://evil.example"}).status_code == 403  # header present, wrong origin
+    still = [a for a in client.get("/api/approvals").json() if a["id"] == pending["id"]]
+    assert still[0]["status"] == "pending"
+    assert client.post(url, headers={"Origin": "http://127.0.0.1:8787"}).status_code == 200
+
+
+async def test_responses_forbid_framing(setup):
+    client, _, _ = setup
+    r = client.get("/api/health")
+    assert r.headers["x-frame-options"] == "DENY" and "frame-ancestors 'none'" in r.headers["content-security-policy"]
+    assert r.headers["x-content-type-options"] == "nosniff"
+    assert client.get("/api/approvals", headers={"Host": "evil.example"}).headers["x-frame-options"] == "DENY"
+
+
+async def test_odd_query_values_do_not_crash(setup):
+    client, _, _ = setup
+    assert client.get("/api/events", params={"limit": "abc"}).status_code == 200
+    assert len(client.get("/api/events", params={"limit": "-5"}).json()) == 1  # clamped to 1
+    assert client.get("/api/events", params={"limit": "99999999999"}).status_code == 200
+
+
+async def test_secrets_in_arguments_never_reach_the_log_or_the_dashboard(setup):
+    client, guard, _ = setup
+    await guard.handle("s1", "submit_otp", {"payment_id": "pay_x", "otp_string": "482913"})
+    shown = json.dumps(client.get("/api/events").json())
+    assert "482913" not in shown and "<redacted>" in shown
+    assert all("482913" not in e.args_json for e in guard.audit.events())
+
+
+
+async def test_approval_ids_are_not_guessable(setup):
+    client, _, _ = setup
+    [pending] = [a for a in client.get("/api/approvals").json() if a["status"] == "pending"]
+    assert len(pending["id"]) == len("apr_") + 32  # 128 random bits
