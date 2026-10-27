@@ -23,7 +23,7 @@ export function Nav() {
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-panel/85 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 text-[17px] font-semibold">
+        <Link prefetch={false} href="/" className="flex items-center gap-2 text-[17px] font-semibold">
           <ShieldCheck className="size-6 text-accent" strokeWidth={2.2} />
           PayGuard
         </Link>
@@ -31,7 +31,7 @@ export function Nav() {
           {LINKS.map(({ href, label, icon: Icon }) => {
             const on = href === "/" ? path === "/" : path?.startsWith(href.slice(0, -1));
             return (
-              <Link key={href} href={href} title={label} aria-label={label}
+              <Link prefetch={false} key={href} href={href} title={label} aria-label={label}
                 className={`flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors ${on ? "bg-panel-2 font-medium text-ink" : "text-muted hover:text-ink"}`}>
                 <Icon className="size-4 shrink-0" />
                 <span className={on ? "" : "hidden lg:inline"}>{label}</span>

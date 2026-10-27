@@ -155,10 +155,10 @@ export default function ProjectPage() {
               would actually do, and allows it, blocks it or hands it to a human.
             </p>
             <div className="rise rise-4 mt-8 flex flex-wrap gap-3">
-              <Link href={demoHref} className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-[15px] font-semibold text-white shadow-[0_10px_30px_-10px_var(--accent)] transition hover:-translate-y-px">
+              <Link prefetch={false} href={demoHref} className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-[15px] font-semibold text-white shadow-[0_10px_30px_-10px_var(--accent)] transition hover:-translate-y-px">
                 Watch a session get judged <ArrowRight className="size-4" />
               </Link>
-              <Link href="/evals/" className="inline-flex items-center gap-2 rounded-xl border border-line bg-panel px-5 py-3 text-[15px] font-semibold transition hover:bg-panel-2">
+              <Link prefetch={false} href="/evals/" className="inline-flex items-center gap-2 rounded-xl border border-line bg-panel px-5 py-3 text-[15px] font-semibold transition hover:bg-panel-2">
                 See the benchmark
               </Link>
               {REPO && (
@@ -219,7 +219,7 @@ export default function ProjectPage() {
             </ul>
           </div>
         )}
-        <Link href="/evals/" className="mt-8 inline-flex items-center gap-2 font-semibold text-accent">Every number, by category and setup <ArrowRight className="size-4" /></Link>
+        <Link prefetch={false} href="/evals/" className="mt-8 inline-flex items-center gap-2 font-semibold text-accent">Every number, by category and setup <ArrowRight className="size-4" /></Link>
       </Section>
 
       {/* ---------------------------------------------------------------- attacks */}
@@ -341,7 +341,7 @@ export default function ProjectPage() {
             </div>
           ))}
         </div>
-        <Link href="/doctor/" className="mt-8 inline-flex items-center gap-2 font-semibold text-accent">Open a Doctor report <ArrowRight className="size-4" /></Link>
+        <Link prefetch={false} href="/doctor/" className="mt-8 inline-flex items-center gap-2 font-semibold text-accent">Open a Doctor report <ArrowRight className="size-4" /></Link>
       </Section>
 
       {/* ---------------------------------------------------------------- limits + run */}

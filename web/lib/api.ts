@@ -15,6 +15,7 @@ let modePromise: Promise<Mode> | null = null;
 export function detectMode(): Promise<Mode> {
   if (!modePromise) {
     modePromise = (async () => {
+      if (process.env.NEXT_PUBLIC_REPLAY_ONLY) return "replay"; // the hosted demo has no API to probe
       if (typeof window !== "undefined" && new URLSearchParams(location.search).has("replay")) return "replay";
       try {
         const r = await fetch(`${API}/api/health`, { cache: "no-store" });
