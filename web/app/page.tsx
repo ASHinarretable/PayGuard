@@ -123,8 +123,12 @@ const COMPARE: [string, string, string, string][] = [
 export default function ProjectPage() {
   const mode = useMode();
   const { data: d } = useJSON<EvalResults>(mode ? "/api/evals" : null);
-  const main = d?.models[0];
+  // The headline model is the one run through every defence; the others are the out-of-sample check.
+  const setupsOf = (m: string) => d?.summary.filter((s) => s.model === m).length ?? 0;
+  const main = d?.models.reduce((best, m) => (setupsOf(m) > setupsOf(best) ? m : best), d.models[0]);
+  const others = (d?.models ?? []).filter((m) => m !== main);
   const get = (setup: string) => d?.summary.find((s) => s.model === main && s.setup === setup);
+  const of = (m: string, setup: string) => d?.summary.find((s) => s.model === m && s.setup === setup);
   const un = get("unguarded"), po = get("prompt_only"), pg = get("payguard");
   const al = get("tool_allowlist"), sc = get("spend_caps");
   const unsafeOf = (s?: EvalSummary) => (s ? `${pct([s.unsafe, s.attack_runs])} unsafe · ${money(s.paise_at_risk)} at risk` : "—");
@@ -190,13 +194,31 @@ export default function ProjectPage() {
 
       {/* ---------------------------------------------------------------- evidence */}
       <Section band kicker="The benchmark" title={<>Prompts and spend caps shrink the damage. <span className="text-muted">Only judging the money removes it.</span></>}
-        lede={`${d ? d.runs : "Hundreds of"} runs across ${d?.summary.length ? "65" : ""} scenarios and five defences, one model, scored from the provider's ledger: did money actually move. Fourteen scenarios are legitimate tasks, so blocking everything would score badly.`}>
+        lede={`${d ? d.runs : "Hundreds of"} runs across ${d?.summary.length ? "65" : ""} scenarios, four models, up to five defences each, scored from the provider's ledger: did money actually move. Fourteen scenarios are legitimate tasks, so blocking everything would score badly.`}>
         <Race un={un} po={po} al={al} sc={sc} pg={pg} />
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-line bg-panel p-5"><div className="tabular text-2xl font-semibold">{pg ? pct([pg.benign_ok, pg.benign_runs]) : "—"}</div><div className="mt-1 text-[13px] text-muted">of legitimate tasks still completed through PayGuard</div></div>
           <div className="rounded-xl border border-line bg-panel p-5"><div className="tabular text-2xl font-semibold">{pg ? pct(pg.false_block) : "—"}</div><div className="mt-1 text-[13px] text-muted">of legitimate write calls blocked or escalated</div></div>
           <div className="rounded-xl border border-line bg-panel p-5"><div className="tabular text-2xl font-semibold">{po ? pct([po.benign_ok, po.benign_runs]) : "—"}</div><div className="mt-1 text-[13px] text-muted">of legitimate tasks the defensive prompt let finish: it makes agents hesitate</div></div>
         </div>
+        {others.length > 0 && (
+          <div className="mt-10 rounded-xl border border-line bg-panel p-5">
+            <div className="font-semibold">Models PayGuard was never tuned on</div>
+            <p className="mt-1 text-[13px] text-muted">The rules were tuned against {main?.split("/").pop()}. These ran afterwards, untouched.</p>
+            <ul className="mt-4 grid gap-3 text-[14px] sm:grid-cols-3">
+              {others.map((m) => {
+                const u = of(m, "unguarded"), g = of(m, "payguard");
+                return (
+                  <li key={m} className="rounded-lg bg-panel-2 p-4">
+                    <div className="font-mono text-[12.5px] text-muted">{m.split("/").pop()}</div>
+                    <div className="mt-2 flex items-baseline gap-2"><span className="tabular text-xl font-semibold text-deny">{u ? pct([u.unsafe, u.attack_runs]) : "—"}</span><span className="text-muted">unguarded{u ? ` (${u.unsafe}/${u.attack_runs})` : ""}</span></div>
+                    <div className="flex items-baseline gap-2"><span className="tabular text-xl font-semibold text-allow">{g ? pct([g.unsafe, g.attack_runs]) : "—"}</span><span className="text-muted">through PayGuard{g ? ` (${g.unsafe}/${g.attack_runs})` : ""}</span></div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
         <Link href="/evals/" className="mt-8 inline-flex items-center gap-2 font-semibold text-accent">Every number, by category and setup <ArrowRight className="size-4" /></Link>
       </Section>
 
@@ -326,9 +348,9 @@ export default function ProjectPage() {
       <Section band kicker="Honest limits" title="What it doesn't do yet">
         <div className="grid gap-4 md:grid-cols-2">
           {[
-            ["One model so far", "The headline comes from Ministral 14B on a free tier, one trial per scenario. More models are queued."],
+            ["Small, free-tier runs", "One trial per scenario, on free API tiers. The other models run a 15-scenario subset; a few runs hit the tier's request-size or daily limit and are marked as missing, not hidden."],
             ["It judges what the agent read", "R8 traces text the agent fetched through PayGuard; acting on a poisoned record it never read is left to the intent check."],
-            ["Tuned once, then re-run", "v2 and v3 fixed misses the first run exposed. The earlier results stay in the repo; the next model is the out-of-sample check."],
+            ["Tuned once, then re-run", "v2 to v5 fixed misses the Ministral runs exposed. The earlier results stay in the repo, and the models that ran afterwards are the out-of-sample check."],
             ["Synthetic merchants", "Payments and customers are generated. The tool list comes from Razorpay's real MCP server; Stripe ships next."],
           ].map(([t, b]) => (
             <div key={t} className="rounded-xl border border-line bg-panel p-5"><div className="font-semibold">{t}</div><p className="mt-1 text-[14px] leading-relaxed text-muted">{b}</p></div>

@@ -27,6 +27,7 @@ from payguard.adapters import ADAPTERS
 from payguard.core.approvals import ApprovalQueue
 from payguard.core.audit import AuditLog
 from payguard.core.policy import Policy
+from payguard.core.redact import redact
 from payguard.env import load_env, read_env_value
 
 DOCKER_IMAGE = "razorpay-mcp:main"
@@ -108,7 +109,7 @@ def cmd_approvals(args: argparse.Namespace) -> None:
         if not rows:
             print("no pending approvals" if not args.all else "no approvals")
         for a in rows:
-            print(f"{a.id}  {a.status:20} {a.session_id}  {a.tool} {a.args_json}")
+            print(f"{a.id}  {a.status:20} {a.session_id}  {a.tool} {json.dumps(redact(a.args))}")
             print(f"    rules: {', '.join(json.loads(a.rules_fired))}  |  {a.reason}")
             if a.intent_check:
                 print(f"    intent: {a.intent_check}")
