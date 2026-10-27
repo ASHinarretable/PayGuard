@@ -4,6 +4,8 @@
 
 [![ci](https://github.com/ASHinarretable/PayGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/ASHinarretable/PayGuard/actions/workflows/ci.yml)
 
+**[Live demo and playground](https://ashinarretable.github.io/PayGuard/)**: write a payment note that tries to get a refund, and watch PayGuard judge it. The demo plays back recorded runs; nothing on that page talks to a payment provider.
+
 ## The problem, on a real account
 
 An agent that handles refunds reads every field on a payment, including the note a customer types at checkout. Anyone can write an instruction there. I planted three such notes on payments in a real Razorpay **Test Mode** account and ran the same agent twice: once talking to Razorpay's own MCP server directly, once through PayGuard.
