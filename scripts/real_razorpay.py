@@ -27,15 +27,15 @@ from mcp.client.stdio import get_default_environment, stdio_client
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from evals.agent import LLM, PROMPT_DEFENCE, run_agent  # noqa: E402
-from evals.harness import lean  # noqa: E402
-from payguard.adapters.razorpay import RazorpayAdapter  # noqa: E402
-from payguard.core.audit import AuditLog  # noqa: E402
-from payguard.core.guard import Guard, ToolOutcome  # noqa: E402
-from payguard.core.policy import Policy  # noqa: E402
-from payguard.env import load_env, read_env_value  # noqa: E402
-from payguard.intent_llm import LLMIntentChecker  # noqa: E402
-from payguard.interfaces.mcp_server import STATUS_TOOL  # noqa: E402
+from evals.agent import LLM, PROMPT_DEFENCE, run_agent
+from evals.harness import lean
+from payguard.adapters.razorpay import RazorpayAdapter
+from payguard.core.audit import AuditLog
+from payguard.core.guard import Guard, ToolOutcome
+from payguard.core.policy import Policy
+from payguard.env import load_env, read_env_value
+from payguard.intent_llm import LLMIntentChecker
+from payguard.interfaces.mcp_server import STATUS_TOOL
 
 PROVIDER_ENV = Path(".env.razorpay")
 IMAGE = "razorpay-mcp:main"
@@ -120,6 +120,33 @@ async def cmd_ledger(_: argparse.Namespace) -> None:
             print(f"{pid}  refunded ₹{paise / 100:,.2f}")
 
 
+def guarded_channel(real: Real, audit: AuditLog, task: str, name: str, intent_model: str | None):
+    """The agent's tool channel through PayGuard, plus the extra tool PayGuard offers."""
+    guard = Guard(RazorpayAdapter(upstream=real, key_id=provider_key_id()), real,
+                  Policy.load("policies/default.yaml"), audit,
+                  intent=LLMIntentChecker(intent_model) if intent_model else None)
+    session_id = f"ses_real_{name}"
+    guard.start_session(session_id, task)
+
+    async def call_tool(tool: str, a: dict[str, Any]) -> tuple[bool, str]:
+        if tool == STATUS_TOOL.name:
+            return False, guard.approval_status(str(a.get("approval_id", "")), session_id)
+        out = await guard.handle(session_id, tool, a)
+        return out.is_error, out.text
+
+    extra = [{"type": "function", "function": {"name": STATUS_TOOL.name, "description": STATUS_TOOL.description,
+                                               "parameters": STATUS_TOOL.input_schema}}]
+    return call_tool, extra
+
+
+def direct_channel(real: Real):
+    async def call_tool(tool: str, a: dict[str, Any]) -> tuple[bool, str]:
+        out = await real.call(tool, a)
+        return out.is_error, out.text
+
+    return call_tool, None
+
+
 async def cmd_run(args: argparse.Namespace) -> None:
     env = load_env()
     for k, v in env.items():
@@ -134,25 +161,8 @@ async def cmd_run(args: argparse.Namespace) -> None:
                 print(f"{args.setup:10} {name:7} skipped: this legitimate refund was already made, and can be made once")
                 continue
             audit = AuditLog()
-            if args.setup == "payguard":
-                guard = Guard(RazorpayAdapter(upstream=real, key_id=provider_key_id()), real,
-                              Policy.load("policies/default.yaml"), audit,
-                              intent=LLMIntentChecker(args.intent_model) if args.intent_model else None)
-                session_id = f"ses_real_{name}"
-                guard.start_session(session_id, task)
-
-                async def call_tool(tool: str, a: dict[str, Any]) -> tuple[bool, str]:
-                    if tool == STATUS_TOOL.name:
-                        return False, guard.approval_status(str(a.get("approval_id", "")), session_id)
-                    out = await guard.handle(session_id, tool, a)
-                    return out.is_error, out.text
-                extra = [{"type": "function", "function": {"name": STATUS_TOOL.name, "description": STATUS_TOOL.description,
-                                                           "parameters": STATUS_TOOL.input_schema}}]
-            else:
-                async def call_tool(tool: str, a: dict[str, Any]) -> tuple[bool, str]:
-                    out = await real.call(tool, a)
-                    return out.is_error, out.text
-                extra = None
+            call_tool, extra = (guarded_channel(real, audit, task, name, args.intent_model)
+                                if args.setup == "payguard" else direct_channel(real))
             system = SYSTEM + (PROMPT_DEFENCE if args.setup == "prompt_only" else "")
             started = time.perf_counter()
             trace = await run_agent(llm, system, task, call_tool, max_turns=8, salt=f"real-{args.setup}",
@@ -167,9 +177,9 @@ async def cmd_run(args: argparse.Namespace) -> None:
                    "tool_calls": [{k: c[k] for k in ("tool", "args", "error")} for c in trace.tool_calls],
                    "final": trace.final[:500], "seconds": round(time.perf_counter() - started, 1),
                    "at": time.strftime("%Y-%m-%dT%H:%M:%S")}
-            OUT.parent.mkdir(parents=True, exist_ok=True)
-            with OUT.open("a", encoding="utf-8") as f:
-                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            await anyio.Path(OUT.parent).mkdir(parents=True, exist_ok=True)
+            async with await anyio.open_file(OUT, "a", encoding="utf-8") as f:
+                await f.write(json.dumps(row, ensure_ascii=False) + chr(10))
             print(f"{args.setup:10} {name:7} refunded={ {p: v / 100 for p, v in moved.items()} } "
                   f"unsafe=₹{unsafe / 100:,.2f} verdicts={[v['verdict'] for v in row['verdicts']]}")
 
