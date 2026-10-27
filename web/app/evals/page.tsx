@@ -1,6 +1,6 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useJSON, useMode } from "@/lib/api";
 import { money, pct, shortModel } from "@/lib/format";
 import type { EvalResults, EvalSummary } from "@/lib/types";
@@ -20,11 +20,21 @@ export default function EvalsPage() {
   if (!d) return null;
 
   const models = d.models;
-  const main = models[0];
+  // The headline model is the one run through every defence.
+  const setupsOf = (m: string) => d.summary.filter((s) => s.model === m).length;
+  const main = models.reduce((best, m) => (setupsOf(m) > setupsOf(best) ? m : best), models[0]);
   const rows = d.summary.filter((s) => s.model === main);
   const get = (setup: string) => rows.find((s) => s.setup === setup);
   const un = get("unguarded"), po = get("prompt_only"), pg = get("payguard");
-  const chart = d.summary.map((s) => ({ ...s, name: `${d.setup_names[s.setup]}${models.length > 1 ? ` · ${shortModel(s.model)}` : ""}`, rate: rate(s), bar: Math.max(rate(s), 0.6) })); // a zero still shows as a sliver, labelled 0%
+  // One cluster per model, one bar per defence. A model that wasn't run with a defence has no bar there.
+  const setups = Object.keys(SETUP_COLOR).filter((st) => d.summary.some((x) => x.setup === st));
+  const chart = models.map((m) => ({
+    model: shortModel(m),
+    ...Object.fromEntries(setups.map((st) => {
+      const x = d.summary.find((r) => r.model === m && r.setup === st);
+      return [st, x ? rate(x) : null];
+    })),
+  }));
 
   return (
     <>
@@ -42,22 +52,33 @@ export default function EvalsPage() {
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
+      <div className="grid gap-5 lg:grid-cols-[1.7fr_1fr]">
         <Card title="Unsafe action rate in attack scenarios" aside="lower is better">
-          <div className="h-64">
-            <ResponsiveContainer>
-              <BarChart data={chart} margin={{ top: 20, right: 8, left: -12 }}>
-                <CartesianGrid vertical={false} stroke="var(--line)" />
-                <XAxis dataKey="name" tick={{ fill: "var(--muted)", fontSize: 12 }} axisLine={false} tickLine={false} interval={0} />
-                <YAxis unit="%" tick={{ fill: "var(--muted)", fontSize: 12 }} axisLine={false} tickLine={false} domain={[0, (max: number) => Math.max(10, Math.ceil(max / 10) * 10)]} />
-                <Tooltip cursor={{ fill: "var(--panel-2)" }} formatter={(_v, _n, item) => `${Math.round(Number(item.payload.rate))}%`}
-                  contentStyle={{ background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 8, color: "var(--ink)" }} />
-                <Bar dataKey="bar" radius={[6, 6, 0, 0]} barSize={46}>
-                  {chart.map((c) => <Cell key={c.name} fill={SETUP_COLOR[c.setup]} />)}
-                  <LabelList dataKey="rate" position="top" formatter={(v: unknown) => `${Math.round(Number(v))}%`} style={{ fill: "var(--ink)", fontSize: 12, fontWeight: 600 }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-[12.5px] text-muted">
+            {setups.map((st) => (
+              <li key={st} className="inline-flex items-center gap-1.5">
+                <span className="size-2.5 rounded-sm" style={{ background: SETUP_COLOR[st] }} />{d.setup_names[st]}
+              </li>
+            ))}
+          </ul>
+          <div className="overflow-x-auto">
+            <div className="h-72 min-w-[640px]">
+              <ResponsiveContainer>
+                <BarChart data={chart} margin={{ top: 20, right: 8, left: -12 }} barGap={2} barCategoryGap="10%">
+                  <CartesianGrid vertical={false} stroke="var(--line)" />
+                  <XAxis dataKey="model" tick={{ fill: "var(--muted)", fontSize: 12 }} axisLine={false} tickLine={false} interval={0} />
+                  <YAxis unit="%" tick={{ fill: "var(--muted)", fontSize: 12 }} axisLine={false} tickLine={false} domain={[0, (max: number) => Math.max(10, Math.ceil(max / 10) * 10)]} />
+                  <Tooltip cursor={{ fill: "var(--panel-2)" }} formatter={(v) => `${Math.round(Number(v))}%`}
+                    contentStyle={{ background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 8, color: "var(--ink)" }} />
+                  {setups.map((st) => (
+                    <Bar key={st} dataKey={st} name={d.setup_names[st]} fill={SETUP_COLOR[st]} radius={[4, 4, 0, 0]} minPointSize={3}>
+                      <LabelList dataKey={st} position="top" formatter={(v: unknown) => (v == null ? "" : `${Math.round(Number(v))}%`)}
+                        style={{ fill: "var(--ink)", fontSize: 10, fontWeight: 600 }} />
+                    </Bar>
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </Card>
 
