@@ -151,8 +151,10 @@ export default function ProjectPage() {
               I gave an AI agent refund powers. <span className="text-shine">Then I attacked it.</span>
             </h1>
             <p className="rise rise-3 mt-6 max-w-[52ch] text-lg leading-relaxed text-muted">
-              PayGuard sits between any agent and a payment provider. Before a call touches money, it checks what the call
-              would actually do, and allows it, blocks it or hands it to a human.
+              Diwali, Big Billion Days, Black Friday: when sales peak, refund queues swell and an AI agent looks like the
+              fix. But it reads every field on a payment, including text any customer can write. PayGuard sits between the
+              agent and the provider. Before a call touches money, it checks what the call would actually do, and allows
+              it, blocks it or hands it to a human.
             </p>
             <div className="rise rise-4 mt-8 flex flex-wrap gap-3">
               <Link prefetch={false} href={demoHref} className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-[15px] font-semibold text-white shadow-[0_10px_30px_-10px_var(--accent)] transition hover:-translate-y-px">

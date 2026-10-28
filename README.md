@@ -2,6 +2,8 @@
 
 **A safety proxy for AI agents that move money.** It sits between an agent and a payment provider's MCP server, judges what each tool call would do to the money, and stops the ones that shouldn't happen. Razorpay first.
 
+Sale season (Diwali, Big Billion Days, Black Friday, end-of-season sales) is when payment support queues swell, and when teams are most tempted to let an AI agent clear them. That agent reads every field on a payment, including text any customer can write. PayGuard is the check between the agent and the money.
+
 [![ci](https://github.com/ASHinarretable/PayGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/ASHinarretable/PayGuard/actions/workflows/ci.yml)
 
 **[Live demo and playground](https://ashinarretable.github.io/PayGuard/)**: write a payment note that tries to get a refund, and watch PayGuard judge it. The demo plays back recorded runs; nothing on that page talks to a payment provider.
