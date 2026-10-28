@@ -178,6 +178,20 @@ doctor/                 Payment Doctor
 web/                    the dashboard and project page (Next.js static export)
 ```
 
+## Tech stack
+
+| Layer | What |
+|---|---|
+| Language and tooling | Python 3.13 (3.12+ works), [uv](https://docs.astral.sh/uv/), ruff, pytest with pytest-asyncio |
+| Protocol | the official MCP Python SDK: an MCP server to the agent and an MCP client to the provider |
+| Core | pydantic for typed actions and policy, PyYAML for the policy file, SQLModel on SQLite for the audit log and approval queue |
+| Models | `httpx` against OpenAI-compatible endpoints, with no model-gateway library |
+| Dashboard API | Starlette and uvicorn with server-sent events for the live feed, pulled in by the MCP SDK |
+| Data and Doctor | Faker for synthetic merchants, pandas for Payment Doctor |
+| Dashboard and site | Next.js 16 (static export), React 19, TypeScript, Tailwind CSS v4, Recharts, lucide-react |
+| Provider | Razorpay's own MCP server, run in Docker |
+| CI and deploy | GitHub Actions (ruff, pytest, OSV dependency scan), GitHub Pages for the demo, Dependabot |
+
 Razorpay is the only provider supported today. Provider-specific code stays in `adapters/`, so another one can be added without touching the rules.
 
 MIT licensed.
