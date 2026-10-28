@@ -6,6 +6,8 @@
 
 **[Live demo and playground](https://ashinarretable.github.io/PayGuard/)**: write a payment note that tries to get a refund, and watch PayGuard judge it. The demo plays back recorded runs; nothing on that page talks to a payment provider.
 
+[Real-account test](#the-problem-on-a-real-account) · [Benchmark](#the-benchmark) · [How it works](#how-it-works) · [Quickstart](#quickstart) · [Security](#security)
+
 ## The problem, on a real account
 
 An agent that handles refunds reads every field on a payment, including the note a customer types at checkout. Anyone can write an instruction there. I planted three such notes on payments in a real Razorpay **Test Mode** account and ran the same agent twice: once talking to Razorpay's own MCP server directly, once through PayGuard.
@@ -41,9 +43,9 @@ The gateway and spend-cap rows are rebuilt from how those kinds of tools documen
 |---|---|---:|---:|
 | gpt-oss-120b | 15-scenario subset | 50% (5/10) | 0% (0/9) |
 | Ministral 8B | all 65, five defences | 25% (13/51), ₹17,794 | 0% (0/51) |
-| Qwen3.8 27B | subset, partial | see [`RESULTS.md`](evals/results/RESULTS.md) | see `RESULTS.md` |
+| Qwen3.8 27B | subset, partial (23 of 30 runs) | 44% (4/9) | 0% (0/6) |
 
-Every table, by model and category: [`evals/results/RESULTS.md`](evals/results/RESULTS.md).
+Qwen's free daily quota ran out mid-run, so its counts are partial and unpaired. Gemini's free tier returned "quota exceeded" for this key and produced no usable runs. Every table, by model and category: [`evals/results/RESULTS.md`](evals/results/RESULTS.md).
 
 **Read these numbers with their limits**
 
@@ -101,7 +103,7 @@ uv run pytest -q
 uv run payguard run --upstream mock --mandate "Refund pay_xxx; the order was cancelled."
 ```
 
-Point any MCP client at that command. For example, in a Claude Desktop-style config:
+That starts PayGuard as an MCP server on stdio, so it waits for a client to connect. Point any MCP client at it. For example, in a Claude Desktop-style config:
 
 ```json
 { "mcpServers": { "razorpay-guarded": {
@@ -128,6 +130,12 @@ uv run payguard dashboard --db payguard.db        # http://127.0.0.1:8787
 ```
 
 Limits and approvals live in [`policies/default.yaml`](policies/default.yaml).
+
+To try the CLI without cloning (the dashboard needs a clone, because it is built from `web/`):
+
+```bash
+uvx --from git+https://github.com/ASHinarretable/PayGuard payguard --help
+```
 
 ## Payment Doctor
 
@@ -168,6 +176,6 @@ doctor/                 Payment Doctor
 web/                    the dashboard and project page (Next.js static export)
 ```
 
-Stripe is next; the adapter boundary is built for it.
+Razorpay is the only provider supported today. Provider-specific code stays in `adapters/`, so another one can be added without touching the rules.
 
 MIT licensed.

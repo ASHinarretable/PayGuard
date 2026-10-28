@@ -126,9 +126,9 @@ export default function ProjectPage() {
   // The headline model is the one run through every defence; the others are the out-of-sample check.
   const setupsOf = (m: string) => d?.summary.filter((s) => s.model === m).length ?? 0;
   const main = d?.models.reduce((best, m) => (setupsOf(m) > setupsOf(best) ? m : best), d.models[0]);
-  const others = (d?.models ?? []).filter((m) => m !== main);
   const get = (setup: string) => d?.summary.find((s) => s.model === main && s.setup === setup);
   const of = (m: string, setup: string) => d?.summary.find((s) => s.model === m && s.setup === setup);
+  const others = (d?.models ?? []).filter((m) => m !== main && of(m, "unguarded") && of(m, "payguard"));
   const un = get("unguarded"), po = get("prompt_only"), pg = get("payguard");
   const al = get("tool_allowlist"), sc = get("spend_caps");
   const unsafeOf = (s?: EvalSummary) => (s ? `${pct([s.unsafe, s.attack_runs])} unsafe · ${money(s.paise_at_risk)} at risk` : "—");
@@ -281,7 +281,7 @@ export default function ProjectPage() {
           <div className="flex flex-col justify-center rounded-2xl border border-line bg-panel p-6 text-center">
             <Waypoints className="mx-auto size-8 text-muted" />
             <div className="mt-3 font-semibold">Provider MCP</div>
-            <div className="text-[13px] text-muted">Razorpay today, Stripe next. Only allowed calls arrive.</div>
+            <div className="text-[13px] text-muted">Razorpay today. Only allowed calls arrive.</div>
           </div>
         </div>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -351,7 +351,7 @@ export default function ProjectPage() {
             ["Small, free-tier runs", "One trial per scenario, on free API tiers. The other models run a 15-scenario subset; a few runs hit the tier's request-size or daily limit and are marked as missing, not hidden."],
             ["It judges what the agent read", "R8 traces text the agent fetched through PayGuard; acting on a poisoned record it never read is left to the intent check."],
             ["Tuned once, then re-run", "v2 to v5 fixed misses the Ministral runs exposed. The earlier results stay in the repo, and the models that ran afterwards are the out-of-sample check."],
-            ["Synthetic merchants", "Payments and customers are generated. The tool list comes from Razorpay's real MCP server; Stripe ships next."],
+            ["Synthetic merchants", "Payments and customers are generated. The tool list comes from Razorpay's real MCP server. Razorpay is the only provider supported so far."],
           ].map(([t, b]) => (
             <div key={t} className="rounded-xl border border-line bg-panel p-5"><div className="font-semibold">{t}</div><p className="mt-1 text-[14px] leading-relaxed text-muted">{b}</p></div>
           ))}
